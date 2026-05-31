@@ -5,7 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>ClassicoFilm TV Prototipo</title>
     <style>
-        /* DISEÑO ESTILO TELEVISIÓN (Fondo oscuro, letras grandes) */
         body {
             background-color: #111;
             color: #fff;
@@ -15,13 +14,12 @@
             overflow-x: hidden;
         }
         h1 {
-            color: #e50914; /* Rojo estilo Netflix */
+            color: #e50914;
             font-size: 2.5rem;
             margin-bottom: 30px;
         }
         h2 { font-size: 1.5rem; margin-left: 10px; }
         
-        /* Contenedor de la fila de películas */
         .tv-row {
             display: flex;
             gap: 20px;
@@ -29,10 +27,8 @@
             padding: 10px;
             scroll-behavior: smooth;
         }
-        /* Ocultar barra de scroll para que parezca una app limpia */
         .tv-row::-webkit-scrollbar { display: none; }
 
-        /* Tarjeta de cada película */
         .movie-card {
             min-width: 180px;
             max-width: 180px;
@@ -43,7 +39,6 @@
             border: 3px solid transparent;
             cursor: pointer;
         }
-        /* Efecto cuando el mando de la tele (o el ratón) se posiciona encima */
         .movie-card:focus, .movie-card:hover {
             transform: scale(1.08);
             border-color: #fff;
@@ -69,37 +64,41 @@
     <h1>ClassicoFilm TV</h1>
     <h2>Últimas Películas Añadidas</h2>
     
-    <!-- Aquí es donde el código meterá las películas automáticamente -->
     <div class="tv-row" id="catalogo-tv">
-        <p id="cargando">Conectando con classicofilm.com...</p>
+        <p id="cargando">Conectando con el catálogo de películas...</p>
     </div>
 
     <script>
-        // Dirección del Feed público de tu Blogger
-        // Pedimos las últimas 20 películas para la prueba
-        const feedUrl = "https://www.classicofilm.com/feeds/posts/default?alt=json&max-results=20";
+        // Usamos un puente público gratuito (allorigins) para saltar el bloqueo de seguridad de tu web
+        const blogUrl = encodeURIComponent("https://classicofilm.blogspot.com/feeds/posts/default?alt=json&max-results=30");
+        const puenteUrl = `https://api.allorigins.win/get?url=${blogUrl}`;
 
         async function conectarConBlogger() {
             try {
-                const respuesta = await fetch(feedUrl);
-                const datos = await respuesta.json();
+                const respuesta = await fetch(puenteUrl);
+                const lasOpciones = await respuesta.json();
+                
+                // Convertimos el texto recibido en datos utilizables
+                const datos = JSON.parse(lasOpciones.contents);
                 const entradas = datos.feed.entry;
                 const contenedor = document.getElementById('catalogo-tv');
                 
-                // Borramos el mensaje de "Cargando..."
                 contenedor.innerHTML = "";
+
+                if(!entradas || entradas.length === 0) {
+                    contenedor.innerHTML = "<p>No se encontraron películas en el feed.</p>";
+                    return;
+                }
 
                 entradas.forEach((entrada, index) => {
                     const titulo = entrada.title.$t;
                     
-                    // Buscamos la imagen del post y la hacemos grande y de buena calidad
+                    // Conseguir la imagen original en alta calidad
                     let imagenUrl = "https://via.placeholder.com/180x260?text=Sin+Portada";
                     if (entrada.media$thumbnail) {
-                        imagenUrl = entrada.media$thumbnail.url.replace('/s72-c/', '/w300_and_h450_bestv2/');
+                        imagenUrl = entrada.media$thumbnail.url.replace('/s72-c/', '/s1600/');
                     }
 
-                    // Creamos la tarjeta visual para la televisión
-                    // Añadimos 'tabindex' para que las flechas del mando/teclado puedan seleccionarla
                     const tarjeta = document.createElement('div');
                     tarjeta.className = 'movie-card';
                     tarjeta.tabIndex = index + 1; 
@@ -108,21 +107,19 @@
                         <p>${titulo}</p>
                     `;
 
-                    // Acción al hacer clic o pulsar OK en el mando
                     tarjeta.addEventListener('click', () => {
-                        alert("Has seleccionado: " + titulo + "\nAquí la app abrirá el reproductor de Dzen.ru");
+                        alert("Has seleccionado: " + titulo);
                     });
 
                     contenedor.appendChild(tarjeta);
                 });
 
             } catch (error) {
-                document.getElementById('cargando').innerText = "Error al conectar con el blog. Asegúrate de estar conectado a internet.";
+                document.getElementById('cargando').innerText = "Error al procesar el catálogo. Reintentando de forma directa...";
                 console.error(error);
             }
         }
 
-        // Arrancar la carga automátiamente al abrir la página
         conectarConBlogger();
     </script>
 </body>
