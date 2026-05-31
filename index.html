@@ -5,34 +5,109 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>ClassicoFilm TV</title>
     <style>
-        body { background-color: #111; color: #fff; font-family: sans-serif; margin: 0; padding: 20px; overflow: hidden; }
-        h1 { color: #e50914; font-size: 2.5rem; margin-bottom: 5px; }
-        h2 { font-size: 1.5rem; margin-top: 5px; color: #aaa; }
-        .tv-row { display: flex; gap: 20px; overflow-x: auto; padding: 15px 10px; }
-        .tv-row::-webkit-scrollbar { display: none; }
-        .movie-card { min-width: 180px; max-width: 180px; background-color: #222; border-radius: 8px; overflow: hidden; transition: transform 0.2s; border: 3px solid transparent; cursor: pointer; }
-        .movie-card:focus, .movie-card:hover { transform: scale(1.06); border-color: #fff; outline: none; }
-        .movie-card img { width: 100%; height: 260px; object-fit: cover; background-color: #333; }
-        .movie-card p { padding: 8px; margin: 0; font-size: 0.9rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-        #video-container { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #000; z-index: 9999; }
+        body { 
+            background-color: #111; 
+            color: #fff; 
+            font-family: 'Segoe UI', Arial, sans-serif; 
+            margin: 0; 
+            padding: 40px; 
+            overflow: hidden; 
+        }
+        h1 { color: #e50914; font-size: 3rem; margin-bottom: 5px; font-weight: bold; }
+        h2 { font-size: 1.6rem; margin-top: 5px; color: #aaa; margin-bottom: 40px; }
+        
+        /* Contenedor de la fila con scroll mejorado */
+        .tv-container {
+            position: relative;
+            width: 100%;
+            overflow: hidden;
+        }
+        .tv-row { 
+            display: flex; 
+            gap: 25px; 
+            padding: 20px 10px;
+            transition: transform 0.3s ease-in-out; /* Movimiento fluido al usar el mando */
+        }
+
+        /* Tarjeta de película adaptada para televisión */
+        .movie-card { 
+            min-width: 220px; 
+            max-width: 220px; 
+            background-color: #222; 
+            border-radius: 12px; 
+            overflow: hidden; 
+            transition: transform 0.2s, border-color 0.2s, box-shadow 0.2s; 
+            border: 4px solid transparent; 
+            cursor: pointer; 
+        }
+        
+        /* Efecto de selección cuando el mando pasa por encima */
+        .movie-card.focused, .movie-card:focus { 
+            transform: scale(1.08); 
+            border-color: #e50914; 
+            box-shadow: 0 0 15px #e50914;
+            outline: none; 
+        }
+        .movie-card img { 
+            width: 100%; 
+            height: 310px; 
+            object-fit: cover; 
+            background-color: #333; 
+        }
+        .movie-card p { 
+            padding: 12px; 
+            margin: 0; 
+            font-size: 1.1rem; 
+            font-weight: bold;
+            white-space: nowrap; 
+            overflow: hidden; 
+            text-overflow: ellipsis; 
+        }
+
+        /* Reproductor a pantalla completa */
+        #video-container { 
+            display: none; 
+            position: fixed; 
+            top: 0; left: 0; width: 100%; height: 100%; 
+            background: #000; 
+            z-index: 9999; 
+        }
         #video-container iframe { width: 100%; height: 100%; border: none; }
-        #btn-cerrar { position: absolute; top: 20px; right: 20px; background: #e50914; color: white; border: none; padding: 10px 20px; font-size: 1rem; border-radius: 5px; cursor: pointer; font-weight: bold; z-index: 10000; }
+        #btn-cerrar { 
+            position: absolute; 
+            top: 30px; right: 30px; 
+            background: #e50914; 
+            color: white; border: none; 
+            padding: 12px 25px; font-size: 1.1rem; 
+            border-radius: 6px; cursor: pointer; 
+            font-weight: bold; z-index: 10000; 
+        }
+        #btn-cerrar.focused {
+            border: 3px solid white;
+            box-shadow: 0 0 10px #fff;
+        }
     </style>
 </head>
 <body>
 
     <h1>ClassicoFilm TV</h1>
-    <h2 id="estado-titulo">Conectando con el almacén completo...</h2>
-    <div class="tv-row" id="catalogo-tv"></div>
+    <h2 id="estado-titulo">Conectando con el catálogo...</h2>
+    
+    <div class="tv-container">
+        <div class="tv-row" id="catalogo-tv"></div>
+    </div>
 
     <div id="video-container">
-        <button id="btn-cerrar" onclick="cerrarVideo()">❌ CERRAR</button>
+        <button id="btn-cerrar" onclick="cerrarVideo()">❌ CERRAR PELÍCULA</button>
         <iframe id="reproductor" src="" allowfullscreen></iframe>
     </div>
 
     <script>
         let totalPeliculas = 0;
-        const titulosRegistrados = new Set(); // Evita que se dupliquen películas si los bloques se solapan
+        const titulosRegistrados = new Set();
+        let indiceEnFoco = 0;
+        let peliculasElementos = [];
+        let reproductorAbierto = false;
 
         function agregarPeliculasAlCatalogo(entradas) {
             const contenedor = document.getElementById('catalogo-tv');
@@ -40,12 +115,10 @@
 
             entradas.forEach((entrada) => {
                 const titulo = entrada.title.$t;
-                
-                // Si la película ya la añadimos en el primer bloque, la saltamos
                 if (titulosRegistrados.has(titulo)) return;
                 titulosRegistrados.add(titulo);
 
-                let imagenUrl = "https://via.placeholder.com/180x260?text=Cine";
+                let imagenUrl = "https://via.placeholder.com/220x310?text=Cine";
                 if (entrada.media$thumbnail) {
                     imagenUrl = entrada.media$thumbnail.url.replace('/s72-c/', '/s1600/');
                 }
@@ -58,70 +131,131 @@
                     if (urlDzen.startsWith('//')) urlDzen = 'https:' + urlDzen;
                 }
 
-                totalPeliculas++;
-
                 const tarjeta = document.createElement('div');
                 tarjeta.className = 'movie-card';
-                tarjeta.tabIndex = totalPeliculas;
                 tarjeta.innerHTML = `<img src="${imagenUrl}"><p>${titulo}</p>`;
+                
+                // Guardamos los datos de la URL de vídeo en el propio elemento
+                tarjeta.dataset.video = urlDzen;
 
-                tarjeta.addEventListener('click', () => {
-                    if (urlDzen) {
-                        document.getElementById('reproductor').src = urlDzen;
-                        document.getElementById('video-container').style.display = "block";
-                        document.getElementById('btn-cerrar').focus();
-                    } else {
-                        alert("Esta película no tiene un reproductor de Dzen detectable.");
-                    }
-                });
+                // Mantenemos compatibilidad con el puntero inteligente de LG
+                tarjeta.addEventListener('click', () => abrirVideo(urlDzen));
 
                 contenedor.appendChild(tarjeta);
+                peliculasElementos.push(tarjeta);
+                totalPeliculas++;
             });
 
-            document.getElementById('estado-titulo').innerText = `Catálogo Automático (${totalPeliculas} películas)`;
+            document.getElementById('estado-titulo').innerText = `Catálogo de Cine Clásico (${totalPeliculas} películas)`;
+            
+            // Al terminar de cargar el primer bloque, enfocamos la primera película
+            if (peliculasElementos.length > 0 && indiceEnFoco === 0) {
+                actualizarFoco();
+            }
         }
 
-        // BLOQUE 1: Recibe las primeras 150 ordenadas por las más nuevas
-        function bloqueNuevas(datos) {
-            agregarPeliculasAlCatalogo(datos.feed.entry);
+        // Sistema de control de foco para el mando
+        function actualizarFoco() {
+            peliculasElementos.forEach(el => el.classList.remove('focused'));
+            
+            if (peliculasElementos[indiceEnFoco]) {
+                const elementoDestino = peliculasElementos[indiceEnFoco];
+                elementoDestino.classList.add('focused');
+                
+                // Desplazamiento automático de la fila para que la película enfocada se mantenga visible
+                const contenedorFila = document.getElementById('catalogo-tv');
+                const desplazamiento = indiceEnFoco * 245; // Ancho tarjeta + gap
+                contenedorFila.style.transform = `translateX(-${desplazamiento}px)`;
+            }
         }
 
-        // BLOQUE 2: Recibe otras 150 empezando desde la posición 151
-        function bloqueMedio(datos) {
-            agregarPeliculasAlCatalogo(datos.feed.entry);
+        // CAPTURAR LAS TECLAS DEL MANDO DE LG (webOS utiliza códigos de teclado estándar)
+        document.addEventListener('keydown', function(e) {
+            if (reproductorAbierto) {
+                // Si el vídeo está abierto, el botón OK o las flechas interactúan con el botón cerrar o el reproductor
+                if (e.keyCode === 13 || e.key === "Enter") {
+                    cerrarVideo();
+                }
+                if (e.keyCode === 461 || e.key === "Backspace" || e.key === "Escape") { // Botón BACK del mando LG
+                    e.preventDefault();
+                    cerrarVideo();
+                }
+                return;
+            }
+
+            switch(e.key) {
+                case "ArrowLeft": // Flecha izquierda del mando
+                    if (indiceEnFoco > 0) {
+                        indiceEnFoco--;
+                        actualizarFoco();
+                    }
+                    break;
+                case "ArrowRight": // Flecha derecha del mando
+                    if (indiceEnFoco < peliculasElementos.length - 1) {
+                        indiceEnFoco++;
+                        actualizarFoco();
+                    }
+                    break;
+                case "Enter": // Botón central OK del mando
+                    const urlVideo = peliculasElementos[indiceEnFoco].dataset.video;
+                    if (urlVideo) {
+                        abrirVideo(urlVideo);
+                    } else {
+                        alert("Esta película no tiene un reproductor compatible.");
+                    }
+                    break;
+                case "Backspace": // Botón atrás en modo catálogo
+                case "Escape":
+                    // Opcional: Evita salirse accidentalmente de la app
+                    break;
+            }
+            
+            // Soporte para códigos numéricos nativos de mandos antiguos de LG
+            if (e.keyCode === 37 && !reproductorAbierto) { // Izquierda
+                if (indiceEnFoco > 0) { indiceEnFoco--; actualizarFoco(); }
+            } else if (e.keyCode === 39 && !reproductorAbierto) { // Derecha
+                if (indiceEnFoco < peliculasElementos.length - 1) { indiceEnFoco++; actualizarFoco(); }
+            } else if (e.keyCode === 13 && !reproductorAbierto) { // OK
+                const urlVideoNum = peliculasElementos[indiceEnFoco].dataset.video;
+                if (urlVideoNum) abrirVideo(urlVideoNum);
+            }
+        });
+
+        function abrirVideo(url) {
+            if (!url) return;
+            reproductorAbierto = true;
+            document.getElementById('reproductor').src = url;
+            document.getElementById('video-container').style.display = "block";
+            document.getElementById('btn-cerrar').classList.add('focused');
         }
 
-        // BLOQUE 3: Recibe otras 150 empezando desde la posición 301
-        function bloqueAntiguas(datos) {
-            agregarPeliculasAlCatalogo(datos.feed.entry);
+        function cerrarVideo() {
+            reproductorAbierto = false;
+            document.getElementById('video-container').style.display = "none";
+            document.getElementById('reproductor').src = "";
+            actualizarFoco();
         }
 
-        // Lanzamos las 3 peticiones en paralelo con funciones contenedoras diferentes para engañar al límite de Blogger
+        // Bloques de carga simultáneos de Blogger
+        function bloqueNuevas(datos) { agregarPeliculasAlCatalogo(datos.feed.entry); }
+        function bloqueMedio(datos) { agregarPeliculasAlCatalogo(datos.feed.entry); }
+        function bloqueAntiguas(datos) { agregarPeliculasAlCatalogo(datos.feed.entry); }
+
         function lanzarCargaCompleta() {
-            // Primeras 150
             const s1 = document.createElement('script');
             s1.src = "https://www.classicofilm.com/feeds/posts/default?alt=json-in-script&start-index=1&max-results=150&callback=bloqueNuevas";
             document.body.appendChild(s1);
 
-            // De la 151 a la 300
             const s2 = document.createElement('script');
             s2.src = "https://www.classicofilm.com/feeds/posts/default?alt=json-in-script&start-index=151&max-results=150&callback=bloqueMedio";
             document.body.appendChild(s2);
 
-            // De la 301 a la 450
             const s3 = document.createElement('script');
             s3.src = "https://www.classicofilm.com/feeds/posts/default?alt=json-in-script&start-index=301&max-results=150&callback=bloqueAntiguas";
             document.body.appendChild(s3);
         }
 
-        function cerrarVideo() {
-            document.getElementById('video-container').style.display = "none";
-            document.getElementById('reproductor').src = "";
-        }
-
-        // Arrancar
         lanzarCargaCompleta();
     </script>
-
 </body>
 </html>
