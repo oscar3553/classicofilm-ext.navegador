@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ClassicoFilm TV Prototipo</title>
+    <style>
+        /* DISEÑO ESTILO TELEVISIÓN (Fondo oscuro, letras grandes) */
+        body {
+            background-color: #111;
+            color: #fff;
+            font-family: 'Segoe UI', Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            overflow-x: hidden;
+        }
+        h1 {
+            color: #e50914; /* Rojo estilo Netflix */
+            font-size: 2.5rem;
+            margin-bottom: 30px;
+        }
+        h2 { font-size: 1.5rem; margin-left: 10px; }
+        
+        /* Contenedor de la fila de películas */
+        .tv-row {
+            display: flex;
+            gap: 20px;
+            overflow-x: auto;
+            padding: 10px;
+            scroll-behavior: smooth;
+        }
+        /* Ocultar barra de scroll para que parezca una app limpia */
+        .tv-row::-webkit-scrollbar { display: none; }
+
+        /* Tarjeta de cada película */
+        .movie-card {
+            min-width: 180px;
+            max-width: 180px;
+            background-color: #222;
+            border-radius: 8px;
+            overflow: hidden;
+            transition: transform 0.2s, border-color 0.2s;
+            border: 3px solid transparent;
+            cursor: pointer;
+        }
+        /* Efecto cuando el mando de la tele (o el ratón) se posiciona encima */
+        .movie-card:focus, .movie-card:hover {
+            transform: scale(1.08);
+            border-color: #fff;
+            outline: none;
+        }
+        .movie-card img {
+            width: 100%;
+            height: 260px;
+            object-fit: cover;
+        }
+        .movie-card p {
+            padding: 8px;
+            margin: 0;
+            font-size: 0.9rem;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+    </style>
+</head>
+<body>
+
+    <h1>ClassicoFilm TV</h1>
+    <h2>Últimas Películas Añadidas</h2>
+    
+    <!-- Aquí es donde el código meterá las películas automáticamente -->
+    <div class="tv-row" id="catalogo-tv">
+        <p id="cargando">Conectando con classicofilm.com...</p>
+    </div>
+
+    <script>
+        // Dirección del Feed público de tu Blogger
+        // Pedimos las últimas 20 películas para la prueba
+        const feedUrl = "https://www.classicofilm.com/feeds/posts/default?alt=json&max-results=20";
+
+        async function conectarConBlogger() {
+            try {
+                const respuesta = await fetch(feedUrl);
+                const datos = await respuesta.json();
+                const entradas = datos.feed.entry;
+                const contenedor = document.getElementById('catalogo-tv');
+                
+                // Borramos el mensaje de "Cargando..."
+                contenedor.innerHTML = "";
+
+                entradas.forEach((entrada, index) => {
+                    const titulo = entrada.title.$t;
+                    
+                    // Buscamos la imagen del post y la hacemos grande y de buena calidad
+                    let imagenUrl = "https://via.placeholder.com/180x260?text=Sin+Portada";
+                    if (entrada.media$thumbnail) {
+                        imagenUrl = entrada.media$thumbnail.url.replace('/s72-c/', '/w300_and_h450_bestv2/');
+                    }
+
+                    // Creamos la tarjeta visual para la televisión
+                    // Añadimos 'tabindex' para que las flechas del mando/teclado puedan seleccionarla
+                    const tarjeta = document.createElement('div');
+                    tarjeta.className = 'movie-card';
+                    tarjeta.tabIndex = index + 1; 
+                    tarjeta.innerHTML = `
+                        <img src="${imagenUrl}" alt="${titulo}">
+                        <p>${titulo}</p>
+                    `;
+
+                    // Acción al hacer clic o pulsar OK en el mando
+                    tarjeta.addEventListener('click', () => {
+                        alert("Has seleccionado: " + titulo + "\nAquí la app abrirá el reproductor de Dzen.ru");
+                    });
+
+                    contenedor.appendChild(tarjeta);
+                });
+
+            } catch (error) {
+                document.getElementById('cargando').innerText = "Error al conectar con el blog. Asegúrate de estar conectado a internet.";
+                console.error(error);
+            }
+        }
+
+        // Arrancar la carga automátiamente al abrir la página
+        conectarConBlogger();
+    </script>
+</body>
+</html>
