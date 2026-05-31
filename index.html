@@ -22,7 +22,7 @@
 <body>
 
     <h1>ClassicoFilm TV</h1>
-    <h2 id="estado-titulo">Cargando catálogo completo de cine...</h2>
+    <h2 id="estado-titulo">Conectando con el almacén completo...</h2>
     <div class="tv-row" id="catalogo-tv"></div>
 
     <div id="video-container">
@@ -32,32 +32,19 @@
 
     <script>
         let totalPeliculas = 0;
-        let indiceInicio = 1;
-        const maxPorLlamada = 150;
+        const titulosRegistrados = new Set(); // Evita que se dupliquen películas si los bloques se solapan
 
-        // Función para lanzar la siguiente petición en segundo plano
-        function solicitarSiguienteBloque() {
-            const script = document.createElement('script');
-            script.src = `https://www.classicofilm.com/feeds/posts/default?alt=json-in-script&start-index=${indiceInicio}&max-results=${maxPorLlamada}&callback=miBuscadorDePeliculas`;
-            document.body.appendChild(script);
-        }
-
-        // Esta función procesa los bloques que Blogger le va mandando
-        function miBuscadorDePeliculas(datos) {
-            const entradas = datos.feed.entry;
+        function agregarPeliculasAlCatalogo(entradas) {
             const contenedor = document.getElementById('catalogo-tv');
-
-            // Si ya no vienen más películas en este bloque, terminamos
-            if (!entradas || entradas.length === 0) {
-                if (totalPeliculas === 0) {
-                    document.getElementById('estado-titulo').innerText = "No se encontraron películas.";
-                }
-                return;
-            }
+            if (!entradas) return;
 
             entradas.forEach((entrada) => {
                 const titulo = entrada.title.$t;
                 
+                // Si la película ya la añadimos en el primer bloque, la saltamos
+                if (titulosRegistrados.has(titulo)) return;
+                titulosRegistrados.add(titulo);
+
                 let imagenUrl = "https://via.placeholder.com/180x260?text=Cine";
                 if (entrada.media$thumbnail) {
                     imagenUrl = entrada.media$thumbnail.url.replace('/s72-c/', '/s1600/');
@@ -92,12 +79,39 @@
             });
 
             document.getElementById('estado-titulo').innerText = `Catálogo Automático (${totalPeliculas} películas)`;
+        }
 
-            // Si el bloque vino lleno (150 películas), avanzamos el índice y pedimos el siguiente lote
-            if (entradas.length === maxPorLlamada) {
-                indiceInicio += maxPorLlamada;
-                setTimeout(solicitarSiguienteBloque, 300); // Pequeña pausa de seguridad
-            }
+        // BLOQUE 1: Recibe las primeras 150 ordenadas por las más nuevas
+        function bloqueNuevas(datos) {
+            agregarPeliculasAlCatalogo(datos.feed.entry);
+        }
+
+        // BLOQUE 2: Recibe otras 150 empezando desde la posición 151
+        function bloqueMedio(datos) {
+            agregarPeliculasAlCatalogo(datos.feed.entry);
+        }
+
+        // BLOQUE 3: Recibe otras 150 empezando desde la posición 301
+        function bloqueAntiguas(datos) {
+            agregarPeliculasAlCatalogo(datos.feed.entry);
+        }
+
+        // Lanzamos las 3 peticiones en paralelo con funciones contenedoras diferentes para engañar al límite de Blogger
+        function lanzarCargaCompleta() {
+            // Primeras 150
+            const s1 = document.createElement('script');
+            s1.src = "https://www.classicofilm.com/feeds/posts/default?alt=json-in-script&start-index=1&max-results=150&callback=bloqueNuevas";
+            document.body.appendChild(s1);
+
+            // De la 151 a la 300
+            const s2 = document.createElement('script');
+            s2.src = "https://www.classicofilm.com/feeds/posts/default?alt=json-in-script&start-index=151&max-results=150&callback=bloqueMedio";
+            document.body.appendChild(s2);
+
+            // De la 301 a la 450
+            const s3 = document.createElement('script');
+            s3.src = "https://www.classicofilm.com/feeds/posts/default?alt=json-in-script&start-index=301&max-results=150&callback=bloqueAntiguas";
+            document.body.appendChild(s3);
         }
 
         function cerrarVideo() {
@@ -105,8 +119,8 @@
             document.getElementById('reproductor').src = "";
         }
 
-        // Arrancar la carga del primer bloque nada más abrir la web
-        solicitarSiguienteBloque();
+        // Arrancar
+        lanzarCargaCompleta();
     </script>
 
 </body>
