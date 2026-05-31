@@ -3,181 +3,106 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ClassicoFilm TV Automática</title>
+    <title>ClassicoFilm TV</title>
     <style>
-        body {
-            background-color: #111;
-            color: #fff;
-            font-family: 'Segoe UI', Arial, sans-serif;
-            margin: 0;
-            padding: 20px;
-            overflow: hidden; /* Evita scrolls raros en la tele */
-        }
+        body { background-color: #111; color: #fff; font-family: sans-serif; margin: 0; padding: 20px; overflow: hidden; }
         h1 { color: #e50914; font-size: 2.5rem; margin-bottom: 5px; }
         h2 { font-size: 1.5rem; margin-top: 5px; color: #aaa; }
-        
-        .tv-row {
-            display: flex;
-            gap: 20px;
-            overflow-x: auto;
-            padding: 15px 10px;
-            scroll-behavior: smooth;
-        }
+        .tv-row { display: flex; gap: 20px; overflow-x: auto; padding: 15px 10px; }
         .tv-row::-webkit-scrollbar { display: none; }
-
-        .movie-card {
-            min-width: 180px;
-            max-width: 180px;
-            background-color: #222;
-            border-radius: 8px;
-            overflow: hidden;
-            transition: transform 0.2s, border-color 0.2s;
-            border: 3px solid transparent;
-            cursor: pointer;
-        }
-        .movie-card:focus, .movie-card:hover {
-            transform: scale(1.06);
-            border-color: #fff;
-            outline: none;
-        }
-        .movie-card img {
-            width: 100%;
-            height: 260px;
-            object-fit: cover;
-            background-color: #333;
-        }
-        .movie-card p {
-            padding: 8px;
-            margin: 0;
-            font-size: 0.9rem;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-        }
-
-        /* CAPA DEL REPRODUCTOR DE VÍDEO A PANTALLA COMPLETA */
-        #video-player-container {
-            display: none;
-            position: fixed;
-            top: 0; left: 0; width: 100%; height: 100%;
-            background: #000;
-            z-index: 9999;
-        }
-        #video-player-container iframe {
-            width: 100%; height: 100%; border: none;
-        }
-        #btn-cerrar-video {
-            position: absolute;
-            top: 20px; right: 20px;
-            background: rgba(255,0,0,0.8);
-            color: white; border: none;
-            padding: 10px 20px; font-size: 1rem;
-            border-radius: 5px; cursor: pointer;
-            font-weight: bold;
-            z-index: 10000;
-        }
+        .movie-card { min-width: 180px; max-width: 180px; background-color: #222; border-radius: 8px; overflow: hidden; transition: transform 0.2s; border: 3px solid transparent; cursor: pointer; }
+        .movie-card:focus, .movie-card:hover { transform: scale(1.06); border-color: #fff; outline: none; }
+        .movie-card img { width: 100%; height: 260px; object-fit: cover; background-color: #333; }
+        .movie-card p { padding: 8px; margin: 0; font-size: 0.9rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        #video-container { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #000; z-index: 9999; }
+        #video-container iframe { width: 100%; height: 100%; border: none; }
+        #btn-cerrar { position: absolute; top: 20px; right: 20px; background: #e50914; color: white; border: none; padding: 10px 20px; font-size: 1rem; border-radius: 5px; cursor: pointer; font-weight: bold; z-index: 10000; }
     </style>
 </head>
 <body>
 
     <h1>ClassicoFilm TV</h1>
-    <h2 id="estado-titulo">Cargando catálogo completo de cine...</h2>
-    
+    <h2 id="estado-titulo">Conectando...</h2>
     <div class="tv-row" id="catalogo-tv"></div>
 
-    <div id="video-player-container">
-        <button id="btn-cerrar-video" onclick="cerrarVideo()">❌ CERRAR PELÍCULA</button>
-        <iframe id="reproductor-tv" src="" allowfullscreen></iframe>
+    <div id="video-container">
+        <button id="btn-cerrar" onclick="cerrarVideo()">❌ CERRAR</button>
+        <iframe id="reproductor" src="" allowfullscreen></iframe>
     </div>
 
     <script>
-        // Pedimos 500 resultados para abarcar todo tu catálogo actual
-        const blogUrl = "https://www.classicofilm.com/feeds/posts/default?alt=json&max-results=500";
+        // Pedimos las películas de forma ligera (summary) para que no pese el archivo
+        const blogUrl = "https://www.classicofilm.com/feeds/posts/summary?alt=json&max-results=500";
         const puenteUrl = `https://api.allorigins.win/get?url=${encodeURIComponent(blogUrl)}`;
 
         async function cargarCatalogo() {
             try {
-                const respuesta = await fetch(puenteUrl);
-                const datosPuente = await respuesta.json();
-                const datosBlogger = JSON.parse(datosPuente.contents);
-                const entradas = datosBlogger.feed.entry;
-                
+                const r = await fetch(puenteUrl);
+                const j = await r.json();
+                const datos = JSON.parse(j.contents);
+                const entradas = datos.feed.entry;
                 const contenedor = document.getElementById('catalogo-tv');
                 contenedor.innerHTML = "";
 
-                if (!entradas) {
-                    document.getElementById('estado-titulo').innerText = "No se encontraron películas.";
-                    return;
-                }
-
-                document.getElementById('estado-titulo').innerText = "Catálogo de Cine Clásico (" + entradas.length + " películas)";
+                document.getElementById('estado-titulo').innerText = "Catálogo Automático (" + entradas.length + " películas)";
 
                 entradas.forEach((entrada, index) => {
                     const titulo = entrada.title.$t;
+                    const idPost = entrada.id.$t.split('post-')[1]; // Guardamos el ID para buscar el vídeo luego
                     
-                    // Extraer portada
                     let imagenUrl = "https://via.placeholder.com/180x260?text=Cine";
                     if (entrada.media$thumbnail) {
                         imagenUrl = entrada.media$thumbnail.url.replace('/s72-c/', '/s1600/');
                     }
 
-                    // EXTRAER EL IFRAME DE DZEN.RU DEL CONTENIDO DEL POST
-                    const contenidoPost = entrada.content.$t;
-                    let urlDzen = "";
-                    
-                    // Buscamos la dirección del iframe de dzen mediante una expresión regular
-                    const buscarSrc = contenidoPost.match(/<iframe[^>]+src="([^">]+)"/);
-                    if (buscarSrc && buscarSrc[1]) {
-                        urlDzen = buscarSrc[1];
-                    }
-
-                    // Si no encontramos iframe, buscamos si hay un enlace normal a dzen
-                    if (!urlDzen) {
-                        const buscarEnlace = contenidoPost.match(/href="([^">]+dzen\.ru[^">]+)"/);
-                        if (buscarEnlace && buscarEnlace[1]) urlDzen = buscarEnlace[1];
-                    }
-
                     const tarjeta = document.createElement('div');
                     tarjeta.className = 'movie-card';
                     tarjeta.tabIndex = index + 1;
-                    tarjeta.innerHTML = `
-                        <img src="${imagenUrl}" alt="${titulo}" onerror="this.src='https://via.placeholder.com/180x260?text=Cine'">
-                        <p>${titulo}</p>
-                    `;
+                    tarjeta.innerHTML = `<img src="${imagenUrl}"><p>${titulo}</p>`;
 
-                    // Al hacer clic, si hay vídeo, lo reproducimos
-                    tarjeta.addEventListener('click', () => {
-                        if (urlDzen) {
-                            abrirVideo(urlDzen);
-                        } else {
-                            alert("Esta entrada no parece tener un reproductor de vídeo compatible.");
-                        }
-                    });
+                    // Al hacer clic, buscamos el vídeo de esa película específica
+                    tarjeta.addEventListener('click', () => buscarVideoYReproducir(idPost));
 
                     contenedor.appendChild(tarjeta);
                 });
-
-            } catch (error) {
-                document.getElementById('estado-titulo').innerText = "Error al sincronizar catálogo.";
-                console.error(error);
+            } catch (e) {
+                document.getElementById('estado-titulo').innerText = "Error. Reintentando...";
+                setTimeout(cargarCatalogo, 3000);
             }
         }
 
-        function abrirVideo(url) {
-            const contenedorVideo = document.getElementById('video-player-container');
-            const iframe = document.getElementById('reproductor-tv');
-            
-            // Aseguramos que el protocolo sea seguro (https)
-            if (url.startsWith('//')) url = 'https:' + url;
-            
-            iframe.src = url;
-            contenedorVideo.style.display = "block";
-            document.getElementById('btn-cerrar-video').focus(); // Pone el foco en cerrar para el mando
+        async function buscarVideoYReproducir(idPost) {
+            document.getElementById('estado-titulo').innerText = "Cargando reproductor de Dzen.ru...";
+            try {
+                // Preguntamos a Blogger SOLO por esta película individual
+                const urlIndividual = `https://www.classicofilm.com/feeds/posts/default/${idPost}?alt=json`;
+                const r = await fetch(`https://api.allorigins.win/get?url=${encodeURIComponent(urlIndividual)}`);
+                const j = await r.json();
+                const datos = JSON.parse(j.contents);
+                const contenido = datos.entry.content.$t;
+
+                // Buscamos el iframe de Dzen
+                const coincidencia = contenido.match(/<iframe[^>]+src="([^">]+)"/);
+                if (coincidencia && coincidencia[1]) {
+                    let urlVideo = coincidencia[1];
+                    if (urlVideo.startsWith('//')) urlVideo = 'https:' + urlVideo;
+                    
+                    document.getElementById('reproductor').src = urlVideo;
+                    document.getElementById('video-container').style.display = "block";
+                    document.getElementById('btn-cerrar').focus();
+                    document.getElementById('estado-titulo').innerText = "Reproduciendo";
+                } else {
+                    alert("No se detectó un reproductor incrustado en este post.");
+                }
+            } catch (e) {
+                alert("Error al abrir el vídeo. Inténtalo de nuevo.");
+            }
         }
 
         function cerrarVideo() {
-            document.getElementById('video-player-container').style.display = "none";
-            document.getElementById('reproductor-tv').src = ""; // Detiene el vídeo
+            document.getElementById('video-container').style.display = "none";
+            document.getElementById('reproductor').src = "";
+            document.getElementById('estado-titulo').innerText = "Catálogo de Cine Clásico";
         }
 
         cargarCatalogo();
