@@ -1,0 +1,12 @@
+{
+    "id": "com.classicofilm.tv",
+    "version": "1.0.0",
+    "vendor": "ClassicoFilm",
+    "type": "web",
+    "main": "index.html",
+    "title": "ClassicoFilm TV",
+    "icon": "icon.png",
+    "largeIcon": "largeIcon.png",
+    "bgImage": "backgroundImage.png",
+    "resolution": "1920x1080"
+}
