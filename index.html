@@ -4,7 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>ClassicoFilm TV Prototipo</title>
-    <script src="https://storage.googleapis.com/google-code-archive-downloads/v2/code.google.com/feednami-client/feednami-1.3.1.min.js"></script>
     <style>
         body {
             background-color: #111;
@@ -24,11 +23,8 @@
         .tv-row {
             display: flex;
             gap: 20px;
-            overflow-x: auto;
             padding: 10px;
-            scroll-behavior: smooth;
         }
-        .tv-row::-webkit-scrollbar { display: none; }
 
         .movie-card {
             min-width: 180px;
@@ -40,6 +36,7 @@
             border: 3px solid transparent;
             cursor: pointer;
         }
+        /* El marco blanco cuando pasas el mando o el ratón */
         .movie-card:focus, .movie-card:hover {
             transform: scale(1.08);
             border-color: #fff;
@@ -63,62 +60,26 @@
 <body>
 
     <h1>ClassicoFilm TV</h1>
-    <h2>Últimas Películas Añadidas</h2>
+    <h2>Películas de Prueba</h2>
     
-    <div class="tv-row" id="catalogo-tv">
-        <p id="cargando">Cargando películas de cine clásico de forma segura...</p>
+    <div class="tv-row">
+        
+        <div class="movie-card" tabindex="1" onclick="alert('Abriendo Película 1 en la tele...')">
+            <img src="https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEiw9T2EbeoK3h-uU9V3Y6M5O8ZscN3E6MvY6vD8_S6Q/s1600/portada1.jpg" onerror="this.src='https://via.placeholder.com/180x260?text=Cine+1'">
+            <p>Muelle de Brumas (1938)</p>
+        </div>
+
+        <div class="movie-card" tabindex="2" onclick="alert('Abriendo Película 2 en la tele...')">
+            <img src="https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEiR8O_m4X7L8P6p3X5L2Q6W8Z8vC8MvY6vD8_S6Q/s1600/portada2.jpg" onerror="this.src='https://via.placeholder.com/180x260?text=Cine+2'">
+            <p>La soga (1948)</p>
+        </div>
+
+        <div class="movie-card" tabindex="3" onclick="alert('Abriendo Película 3 en la tele...')">
+            <img src="https://via.placeholder.com/180x260?text=Cine+Clasico">
+            <p>El Halcón Maltés (1941)</p>
+        </div>
+
     </div>
 
-    <script>
-        // Dirección del feed estándar de tu blog
-        const urlBlog = 'https://www.classicofilm.com/feeds/posts/default';
-
-        function cargarPeliculas() {
-            const contenedor = document.getElementById('catalogo-tv');
-
-            // Feednami se encarga de saltar bloqueos de seguridad y procesar el contenido
-            feednami.load(urlBlog, function(result) {
-                if (result.error) {
-                    contenedor.innerHTML = "<p>Error al conectar con las películas. Por favor, refresca la página.</p>";
-                    console.error(result.error);
-                } else {
-                    contenedor.innerHTML = "";
-                    const entradas = result.feed.entries;
-
-                    entradas.forEach((entrada, index) => {
-                        const titulo = entrada.title;
-                        
-                        // Buscamos si el post tiene una imagen dentro de su código
-                        let imagenUrl = "https://via.placeholder.com/180x260?text=Cine+Clasico";
-                        
-                        // Intentar extraer la imagen del contenido del post
-                        if (entrada.description) {
-                            const coincidenciaImg = entrada.description.match(/<img[^>]+src="([^">]+)"/);
-                            if (coincidenciaImg && coincidenciaImg[1]) {
-                                imagenUrl = coincidenciaImg[1];
-                            }
-                        }
-
-                        const tarjeta = document.createElement('div');
-                        tarjeta.className = 'movie-card';
-                        tarjeta.tabIndex = index + 1; 
-                        tarjeta.innerHTML = `
-                            <img src="${imagenUrl}" alt="${titulo}">
-                            <p>${titulo}</p>
-                        `;
-
-                        tarjeta.addEventListener('click', () => {
-                            alert("Has seleccionado: " + titulo);
-                        });
-
-                        contenedor.appendChild(tarjeta);
-                    });
-                }
-            });
-        }
-
-        // Ejecutar al cargar la página
-        cargarPeliculas();
-    </script>
 </body>
 </html>
