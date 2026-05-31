@@ -10,61 +10,54 @@
             color: #fff; 
             font-family: 'Segoe UI', Arial, sans-serif; 
             margin: 0; 
-            padding: 40px; 
-            overflow: hidden; 
+            padding: 30px; 
+            overflow-y: auto; /* Permitimos scroll vertical para el panel */
         }
-        h1 { color: #e50914; font-size: 3rem; margin-bottom: 5px; font-weight: bold; }
-        h2 { font-size: 1.6rem; margin-top: 5px; color: #aaa; margin-bottom: 40px; }
+        h1 { color: #e50914; font-size: 2.8rem; margin: 0 0 5px 0; font-weight: bold; }
+        h2 { font-size: 1.4rem; margin: 0 0 30px 0; color: #aaa; }
         
-        /* Contenedor de la fila con scroll mejorado */
-        .tv-container {
-            position: relative;
-            width: 100%;
-            overflow: hidden;
-        }
-        .tv-row { 
-            display: flex; 
+        /* Contenedor tipo Panel / Rejilla estilo Netflix */
+        .tv-grid { 
+            display: grid; 
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); 
             gap: 25px; 
-            padding: 20px 10px;
-            transition: transform 0.3s ease-in-out; /* Movimiento fluido al usar el mando */
+            padding-bottom: 60px;
         }
 
-        /* Tarjeta de película adaptada para televisión */
+        /* Tarjeta de película optimizada */
         .movie-card { 
-            min-width: 220px; 
-            max-width: 220px; 
             background-color: #222; 
-            border-radius: 12px; 
+            border-radius: 10px; 
             overflow: hidden; 
             transition: transform 0.2s, border-color 0.2s, box-shadow 0.2s; 
             border: 4px solid transparent; 
             cursor: pointer; 
         }
         
-        /* Efecto de selección cuando el mando pasa por encima */
-        .movie-card.focused, .movie-card:focus { 
-            transform: scale(1.08); 
+        /* Efecto de selección limpio para el mando */
+        .movie-card.focused { 
+            transform: scale(1.06); 
             border-color: #e50914; 
-            box-shadow: 0 0 15px #e50914;
+            box-shadow: 0 0 15px rgba(229, 9, 20, 0.6);
             outline: none; 
         }
         .movie-card img { 
             width: 100%; 
-            height: 310px; 
+            height: 280px; 
             object-fit: cover; 
             background-color: #333; 
         }
         .movie-card p { 
-            padding: 12px; 
+            padding: 10px; 
             margin: 0; 
-            font-size: 1.1rem; 
+            font-size: 1rem; 
             font-weight: bold;
             white-space: nowrap; 
             overflow: hidden; 
             text-overflow: ellipsis; 
         }
 
-        /* Reproductor a pantalla completa */
+        /* Pantalla completa del reproductor */
         #video-container { 
             display: none; 
             position: fixed; 
@@ -73,6 +66,7 @@
             z-index: 9999; 
         }
         #video-container iframe { width: 100%; height: 100%; border: none; }
+        
         #btn-cerrar { 
             position: absolute; 
             top: 30px; right: 30px; 
@@ -91,11 +85,9 @@
 <body>
 
     <h1>ClassicoFilm TV</h1>
-    <h2 id="estado-titulo">Conectando con el catálogo...</h2>
+    <h2 id="estado-titulo">Cargando catálogo en modo panel...</h2>
     
-    <div class="tv-container">
-        <div class="tv-row" id="catalogo-tv"></div>
-    </div>
+    <div class="tv-grid" id="catalogo-tv"></div>
 
     <div id="video-container">
         <button id="btn-cerrar" onclick="cerrarVideo()">❌ CERRAR PELÍCULA</button>
@@ -118,7 +110,7 @@
                 if (titulosRegistrados.has(titulo)) return;
                 titulosRegistrados.add(titulo);
 
-                let imagenUrl = "https://via.placeholder.com/220x310?text=Cine";
+                let imagenUrl = "https://via.placeholder.com/200x280?text=Cine";
                 if (entrada.media$thumbnail) {
                     imagenUrl = entrada.media$thumbnail.url.replace('/s72-c/', '/s1600/');
                 }
@@ -134,11 +126,8 @@
                 const tarjeta = document.createElement('div');
                 tarjeta.className = 'movie-card';
                 tarjeta.innerHTML = `<img src="${imagenUrl}"><p>${titulo}</p>`;
-                
-                // Guardamos los datos de la URL de vídeo en el propio elemento
                 tarjeta.dataset.video = urlDzen;
 
-                // Mantenemos compatibilidad con el puntero inteligente de LG
                 tarjeta.addEventListener('click', () => abrirVideo(urlDzen));
 
                 contenedor.appendChild(tarjeta);
@@ -148,13 +137,11 @@
 
             document.getElementById('estado-titulo').innerText = `Catálogo de Cine Clásico (${totalPeliculas} películas)`;
             
-            // Al terminar de cargar el primer bloque, enfocamos la primera película
             if (peliculasElementos.length > 0 && indiceEnFoco === 0) {
                 actualizarFoco();
             }
         }
 
-        // Sistema de control de foco para el mando
         function actualizarFoco() {
             peliculasElementos.forEach(el => el.classList.remove('focused'));
             
@@ -162,62 +149,59 @@
                 const elementoDestino = peliculasElementos[indiceEnFoco];
                 elementoDestino.classList.add('focused');
                 
-                // Desplazamiento automático de la fila para que la película enfocada se mantenga visible
-                const contenedorFila = document.getElementById('catalogo-tv');
-                const desplazamiento = indiceEnFoco * 245; // Ancho tarjeta + gap
-                contenedorFila.style.transform = `translateX(-${desplazamiento}px)`;
+                // Hace que la pantalla de la tele baje o suba sola siguiendo la película seleccionada
+                elementoDestino.scrollIntoView({ behavior: 'smooth', block: 'center' });
             }
         }
 
-        // CAPTURAR LAS TECLAS DEL MANDO DE LG (webOS utiliza códigos de teclado estándar)
+        // CONTROL INTELIGENTE PARA EVITAR EL DOBLE SALTO EN SMART TV
         document.addEventListener('keydown', function(e) {
             if (reproductorAbierto) {
-                // Si el vídeo está abierto, el botón OK o las flechas interactúan con el botón cerrar o el reproductor
-                if (e.keyCode === 13 || e.key === "Enter") {
-                    cerrarVideo();
-                }
-                if (e.keyCode === 461 || e.key === "Backspace" || e.key === "Escape") { // Botón BACK del mando LG
+                if (e.keyCode === 13 || e.key === "Enter" || e.keyCode === 461 || e.key === "Backspace" || e.key === "Escape") {
                     e.preventDefault();
                     cerrarVideo();
                 }
                 return;
             }
 
+            // Calculamos cuántas columnas reales se ven en la tele para saber cuánto saltar arriba/abajo
+            const contenedor = document.getElementById('catalogo-tv');
+            const columnas = window.getComputedStyle(contenedor).getPropertyValue('grid-template-columns').split(' ').length;
+
             switch(e.key) {
-                case "ArrowLeft": // Flecha izquierda del mando
+                case "ArrowLeft":
+                    e.preventDefault(); // Evita que la tele mueva el foco por su cuenta
                     if (indiceEnFoco > 0) {
                         indiceEnFoco--;
                         actualizarFoco();
                     }
                     break;
-                case "ArrowRight": // Flecha derecha del mando
+                case "ArrowRight":
+                    e.preventDefault();
                     if (indiceEnFoco < peliculasElementos.length - 1) {
                         indiceEnFoco++;
                         actualizarFoco();
                     }
                     break;
-                case "Enter": // Botón central OK del mando
-                    const urlVideo = peliculasElementos[indiceEnFoco].dataset.video;
-                    if (urlVideo) {
-                        abrirVideo(urlVideo);
-                    } else {
-                        alert("Esta película no tiene un reproductor compatible.");
+                case "ArrowUp": // Subir una fila completa hacia arriba
+                    e.preventDefault();
+                    if (indiceEnFoco - columnas >= 0) {
+                        indiceEnFoco -= columnas;
+                        actualizarFoco();
                     }
                     break;
-                case "Backspace": // Botón atrás en modo catálogo
-                case "Escape":
-                    // Opcional: Evita salirse accidentalmente de la app
+                case "ArrowDown": // Bajar una fila completa hacia abajo
+                    e.preventDefault();
+                    if (indiceEnFoco + columnas < peliculasElementos.length) {
+                        indiceEnFoco += columnas;
+                        actualizarFoco();
+                    }
                     break;
-            }
-            
-            // Soporte para códigos numéricos nativos de mandos antiguos de LG
-            if (e.keyCode === 37 && !reproductorAbierto) { // Izquierda
-                if (indiceEnFoco > 0) { indiceEnFoco--; actualizarFoco(); }
-            } else if (e.keyCode === 39 && !reproductorAbierto) { // Derecha
-                if (indiceEnFoco < peliculasElementos.length - 1) { indiceEnFoco++; actualizarFoco(); }
-            } else if (e.keyCode === 13 && !reproductorAbierto) { // OK
-                const urlVideoNum = peliculasElementos[indiceEnFoco].dataset.video;
-                if (urlVideoNum) abrirVideo(urlVideoNum);
+                case "Enter":
+                    e.preventDefault();
+                    const urlVideo = peliculasElementos[indiceEnFoco].dataset.video;
+                    if (urlVideo) abrirVideo(urlVideo);
+                    break;
             }
         });
 
@@ -236,7 +220,6 @@
             actualizarFoco();
         }
 
-        // Bloques de carga simultáneos de Blogger
         function bloqueNuevas(datos) { agregarPeliculasAlCatalogo(datos.feed.entry); }
         function bloqueMedio(datos) { agregarPeliculasAlCatalogo(datos.feed.entry); }
         function bloqueAntiguas(datos) { agregarPeliculasAlCatalogo(datos.feed.entry); }
