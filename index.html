@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>ClassicoFilm TV Prototipo</title>
+    <script src="https://storage.googleapis.com/google-code-archive-downloads/v2/code.google.com/feednami-client/feednami-1.3.1.min.js"></script>
     <style>
         body {
             background-color: #111;
@@ -65,62 +66,59 @@
     <h2>Últimas Películas Añadidas</h2>
     
     <div class="tv-row" id="catalogo-tv">
-        <p id="cargando">Conectando con el catálogo de películas...</p>
+        <p id="cargando">Cargando películas de cine clásico de forma segura...</p>
     </div>
 
     <script>
-        // Usamos un puente público gratuito (allorigins) para saltar el bloqueo de seguridad de tu web
-        const blogUrl = encodeURIComponent("https://classicofilm.blogspot.com/feeds/posts/default?alt=json&max-results=30");
-        const puenteUrl = `https://api.allorigins.win/get?url=${blogUrl}`;
+        // Dirección del feed estándar de tu blog
+        const urlBlog = 'https://www.classicofilm.com/feeds/posts/default';
 
-        async function conectarConBlogger() {
-            try {
-                const respuesta = await fetch(puenteUrl);
-                const lasOpciones = await respuesta.json();
-                
-                // Convertimos el texto recibido en datos utilizables
-                const datos = JSON.parse(lasOpciones.contents);
-                const entradas = datos.feed.entry;
-                const contenedor = document.getElementById('catalogo-tv');
-                
-                contenedor.innerHTML = "";
+        function cargarPeliculas() {
+            const contenedor = document.getElementById('catalogo-tv');
 
-                if(!entradas || entradas.length === 0) {
-                    contenedor.innerHTML = "<p>No se encontraron películas en el feed.</p>";
-                    return;
-                }
+            // Feednami se encarga de saltar bloqueos de seguridad y procesar el contenido
+            feednami.load(urlBlog, function(result) {
+                if (result.error) {
+                    contenedor.innerHTML = "<p>Error al conectar con las películas. Por favor, refresca la página.</p>";
+                    console.error(result.error);
+                } else {
+                    contenedor.innerHTML = "";
+                    const entradas = result.feed.entries;
 
-                entradas.forEach((entrada, index) => {
-                    const titulo = entrada.title.$t;
-                    
-                    // Conseguir la imagen original en alta calidad
-                    let imagenUrl = "https://via.placeholder.com/180x260?text=Sin+Portada";
-                    if (entrada.media$thumbnail) {
-                        imagenUrl = entrada.media$thumbnail.url.replace('/s72-c/', '/s1600/');
-                    }
+                    entradas.forEach((entrada, index) => {
+                        const titulo = entrada.title;
+                        
+                        // Buscamos si el post tiene una imagen dentro de su código
+                        let imagenUrl = "https://via.placeholder.com/180x260?text=Cine+Clasico";
+                        
+                        // Intentar extraer la imagen del contenido del post
+                        if (entrada.description) {
+                            const coincidenciaImg = entrada.description.match(/<img[^>]+src="([^">]+)"/);
+                            if (coincidenciaImg && coincidenciaImg[1]) {
+                                imagenUrl = coincidenciaImg[1];
+                            }
+                        }
 
-                    const tarjeta = document.createElement('div');
-                    tarjeta.className = 'movie-card';
-                    tarjeta.tabIndex = index + 1; 
-                    tarjeta.innerHTML = `
-                        <img src="${imagenUrl}" alt="${titulo}">
-                        <p>${titulo}</p>
-                    `;
+                        const tarjeta = document.createElement('div');
+                        tarjeta.className = 'movie-card';
+                        tarjeta.tabIndex = index + 1; 
+                        tarjeta.innerHTML = `
+                            <img src="${imagenUrl}" alt="${titulo}">
+                            <p>${titulo}</p>
+                        `;
 
-                    tarjeta.addEventListener('click', () => {
-                        alert("Has seleccionado: " + titulo);
+                        tarjeta.addEventListener('click', () => {
+                            alert("Has seleccionado: " + titulo);
+                        });
+
+                        contenedor.appendChild(tarjeta);
                     });
-
-                    contenedor.appendChild(tarjeta);
-                });
-
-            } catch (error) {
-                document.getElementById('cargando').innerText = "Error al procesar el catálogo. Reintentando de forma directa...";
-                console.error(error);
-            }
+                }
+            });
         }
 
-        conectarConBlogger();
+        // Ejecutar al cargar la página
+        cargarPeliculas();
     </script>
 </body>
 </html>
