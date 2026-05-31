@@ -22,7 +22,7 @@
 <body>
 
     <h1>ClassicoFilm TV</h1>
-    <h2 id="estado-titulo">Conectando...</h2>
+    <h2 id="estado-titulo">Cargando catálogo en bloques seguros...</h2>
     <div class="tv-row" id="catalogo-tv"></div>
 
     <div id="video-container">
@@ -31,57 +31,76 @@
     </div>
 
     <script>
-        // Pedimos las películas de forma ligera (summary) para que no pese el archivo
-        const blogUrl = "https://www.classicofilm.com/feeds/posts/summary?alt=json&max-results=500";
-        const puenteUrl = `https://api.allorigins.win/get?url=${encodeURIComponent(blogUrl)}`;
+        let totalPeliculasCargadas = 0;
+        const maxPorBloque = 50; // Cargamos de 50 en 50 para evitar errores de saturación
+        let indiceInicio = 1;
 
-        async function cargarCatalogo() {
+        async function cargarBloque() {
+            // Usamos la ruta exacta que funcionó en tu captura exitosa
+            const blogUrl = `https://www.classicofilm.com/feeds/posts/default?alt=json&start-index=${indiceInicio}&max-results=${maxPorBloque}`;
+            const puenteUrl = `https://api.allorigins.win/get?url=${encodeURIComponent(blogUrl)}`;
+
             try {
                 const r = await fetch(puenteUrl);
                 const j = await r.json();
                 const datos = JSON.parse(j.contents);
                 const entradas = datos.feed.entry;
                 const contenedor = document.getElementById('catalogo-tv');
-                contenedor.innerHTML = "";
 
-                document.getElementById('estado-titulo').innerText = "Catálogo Automático (" + entradas.length + " películas)";
+                if (!entradas || entradas.length === 0) {
+                    if (totalPeliculasCargadas === 0) {
+                        document.getElementById('estado-titulo').innerText = "No se encontraron películas.";
+                    }
+                    return; // Ya no hay más películas que cargar
+                }
 
-                entradas.forEach((entrada, index) => {
+                entradas.forEach((entrada) => {
                     const titulo = entrada.title.$t;
-                    const idPost = entrada.id.$t.split('post-')[1]; // Guardamos el ID para buscar el vídeo luego
+                    const idPost = entrada.id.$t.split('post-')[1];
                     
                     let imagenUrl = "https://via.placeholder.com/180x260?text=Cine";
                     if (entrada.media$thumbnail) {
                         imagenUrl = entrada.media$thumbnail.url.replace('/s72-c/', '/s1600/');
                     }
 
+                    totalPeliculasCargadas++;
+
                     const tarjeta = document.createElement('div');
                     tarjeta.className = 'movie-card';
-                    tarjeta.tabIndex = index + 1;
+                    tarjeta.tabIndex = totalPeliculasCargadas;
                     tarjeta.innerHTML = `<img src="${imagenUrl}"><p>${titulo}</p>`;
 
-                    // Al hacer clic, buscamos el vídeo de esa película específica
+                    // Al hacer clic, busca el vídeo de Dzen solo para esta película
                     tarjeta.addEventListener('click', () => buscarVideoYReproducir(idPost));
 
                     contenedor.appendChild(tarjeta);
                 });
+
+                document.getElementById('estado-titulo').innerText = `Catálogo Automático (${totalPeliculasCargadas} películas)`;
+
+                // Si Blogger nos devolvió el bloque lleno, significa que probablemente hay más películas.
+                // Avanzamos el índice y pedimos las siguientes 50 automáticamente en segundo plano.
+                if (entradas.length === maxPorBloque && totalPeliculasCargadas < 550) {
+                    indiceInicio += maxPorBloque;
+                    setTimeout(cargarBloque, 500); // Pausa de medio segundo para no saturar
+                }
+
             } catch (e) {
-                document.getElementById('estado-titulo').innerText = "Error. Reintentando...";
-                setTimeout(cargarCatalogo, 3000);
+                console.error("Fallo en bloque, reintentando...", e);
+                setTimeout(cargarBloque, 3000);
             }
         }
 
         async function buscarVideoYReproducir(idPost) {
+            const tituloOriginal = document.getElementById('estado-titulo').innerText;
             document.getElementById('estado-titulo').innerText = "Cargando reproductor de Dzen.ru...";
             try {
-                // Preguntamos a Blogger SOLO por esta película individual
                 const urlIndividual = `https://www.classicofilm.com/feeds/posts/default/${idPost}?alt=json`;
                 const r = await fetch(`https://api.allorigins.win/get?url=${encodeURIComponent(urlIndividual)}`);
                 const j = await r.json();
                 const datos = JSON.parse(j.contents);
                 const contenido = datos.entry.content.$t;
 
-                // Buscamos el iframe de Dzen
                 const coincidencia = contenido.match(/<iframe[^>]+src="([^">]+)"/);
                 if (coincidencia && coincidencia[1]) {
                     let urlVideo = coincidencia[1];
@@ -90,22 +109,25 @@
                     document.getElementById('reproductor').src = urlVideo;
                     document.getElementById('video-container').style.display = "block";
                     document.getElementById('btn-cerrar').focus();
-                    document.getElementById('estado-titulo').innerText = "Reproduciendo";
+                    document.getElementById('estado-titulo').innerText = "Reproduciendo película...";
                 } else {
-                    alert("No se detectó un reproductor incrustado en este post.");
+                    alert("No se detectó un reproductor incrustado en esta película.");
+                    document.getElementById('estado-titulo').innerText = tituloOriginal;
                 }
             } catch (e) {
-                alert("Error al abrir el vídeo. Inténtalo de nuevo.");
+                alert("Error al conectar con el servidor de vídeo.");
+                document.getElementById('estado-titulo').innerText = tituloOriginal;
             }
         }
 
         function cerrarVideo() {
             document.getElementById('video-container').style.display = "none";
             document.getElementById('reproductor').src = "";
-            document.getElementById('estado-titulo').innerText = "Catálogo de Cine Clásico";
+            document.getElementById('estado-titulo').innerText = `Catálogo Automático (${totalPeliculasCargadas} películas)`;
         }
 
-        cargarCatalogo();
+        // Arrancar la carga del primer bloque
+        cargarBloque();
     </script>
 </body>
 </html>
