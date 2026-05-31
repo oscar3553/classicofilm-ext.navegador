@@ -22,7 +22,7 @@
 <body>
 
     <h1>ClassicoFilm TV</h1>
-    <h2 id="estado-titulo">Cargando catálogo oficial...</h2>
+    <h2 id="estado-titulo">Cargando catálogo completo de cine...</h2>
     <div class="tv-row" id="catalogo-tv"></div>
 
     <div id="video-container">
@@ -31,29 +31,38 @@
     </div>
 
     <script>
-        // Esta función recibe los datos directamente de Blogger sin pasar por puentes
+        let totalPeliculas = 0;
+        let indiceInicio = 1;
+        const maxPorLlamada = 150;
+
+        // Función para lanzar la siguiente petición en segundo plano
+        function solicitarSiguienteBloque() {
+            const script = document.createElement('script');
+            script.src = `https://www.classicofilm.com/feeds/posts/default?alt=json-in-script&start-index=${indiceInicio}&max-results=${maxPorLlamada}&callback=miBuscadorDePeliculas`;
+            document.body.appendChild(script);
+        }
+
+        // Esta función procesa los bloques que Blogger le va mandando
         function miBuscadorDePeliculas(datos) {
             const entradas = datos.feed.entry;
             const contenedor = document.getElementById('catalogo-tv');
-            contenedor.innerHTML = "";
 
+            // Si ya no vienen más películas en este bloque, terminamos
             if (!entradas || entradas.length === 0) {
-                document.getElementById('estado-titulo').innerText = "No se encontraron películas.";
+                if (totalPeliculas === 0) {
+                    document.getElementById('estado-titulo').innerText = "No se encontraron películas.";
+                }
                 return;
             }
 
-            document.getElementById('estado-titulo').innerText = `Catálogo Automático (${entradas.length} películas)`;
-
-            entradas.forEach((entrada, index) => {
+            entradas.forEach((entrada) => {
                 const titulo = entrada.title.$t;
                 
-                // Conseguimos la portada en alta definición
                 let imagenUrl = "https://via.placeholder.com/180x260?text=Cine";
                 if (entrada.media$thumbnail) {
                     imagenUrl = entrada.media$thumbnail.url.replace('/s72-c/', '/s1600/');
                 }
 
-                // Extraemos el contenido completo para buscar el iframe de Dzen
                 const contenidoPost = entrada.content ? entrada.content.$t : "";
                 let urlDzen = "";
                 const coincidencia = contenidoPost.match(/<iframe[^>]+src="([^">]+)"/);
@@ -62,12 +71,13 @@
                     if (urlDzen.startsWith('//')) urlDzen = 'https:' + urlDzen;
                 }
 
+                totalPeliculas++;
+
                 const tarjeta = document.createElement('div');
                 tarjeta.className = 'movie-card';
-                tarjeta.tabIndex = index + 1;
+                tarjeta.tabIndex = totalPeliculas;
                 tarjeta.innerHTML = `<img src="${imagenUrl}"><p>${titulo}</p>`;
 
-                // Al hacer clic, abre el vídeo directamente
                 tarjeta.addEventListener('click', () => {
                     if (urlDzen) {
                         document.getElementById('reproductor').src = urlDzen;
@@ -80,15 +90,24 @@
 
                 contenedor.appendChild(tarjeta);
             });
+
+            document.getElementById('estado-titulo').innerText = `Catálogo Automático (${totalPeliculas} películas)`;
+
+            // Si el bloque vino lleno (150 películas), avanzamos el índice y pedimos el siguiente lote
+            if (entradas.length === maxPorLlamada) {
+                indiceInicio += maxPorLlamada;
+                setTimeout(solicitarSiguienteBloque, 300); // Pequeña pausa de seguridad
+            }
         }
 
         function cerrarVideo() {
             document.getElementById('video-container').style.display = "none";
             document.getElementById('reproductor').src = "";
         }
-    </script>
 
-    <script src="https://www.classicofilm.com/feeds/posts/default?alt=json-in-script&max-results=500&callback=miBuscadorDePeliculas"></script>
+        // Arrancar la carga del primer bloque nada más abrir la web
+        solicitarSiguienteBloque();
+    </script>
 
 </body>
 </html>
