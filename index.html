@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ClassicoFilm TV Prototipo</title>
+    <title>ClassicoFilm TV Automática</title>
     <style>
         body {
             background-color: #111;
@@ -13,18 +13,17 @@
             padding: 20px;
             overflow-x: hidden;
         }
-        h1 {
-            color: #e50914;
-            font-size: 2.5rem;
-            margin-bottom: 30px;
-        }
-        h2 { font-size: 1.5rem; margin-left: 10px; }
+        h1 { color: #e50914; font-size: 2.5rem; margin-bottom: 5px; }
+        h2 { font-size: 1.5rem; margin-top: 5px; color: #aaa; }
         
         .tv-row {
             display: flex;
             gap: 20px;
-            padding: 10px;
+            overflow-x: auto;
+            padding: 15px 10px;
+            scroll-behavior: smooth;
         }
+        .tv-row::-webkit-scrollbar { display: none; }
 
         .movie-card {
             min-width: 180px;
@@ -36,9 +35,8 @@
             border: 3px solid transparent;
             cursor: pointer;
         }
-        /* El marco blanco cuando pasas el mando o el ratón */
         .movie-card:focus, .movie-card:hover {
-            transform: scale(1.08);
+            transform: scale(1.06);
             border-color: #fff;
             outline: none;
         }
@@ -46,6 +44,7 @@
             width: 100%;
             height: 260px;
             object-fit: cover;
+            background-color: #333;
         }
         .movie-card p {
             padding: 8px;
@@ -55,31 +54,97 @@
             overflow: hidden;
             text-overflow: ellipsis;
         }
+        #consola-depuracion {
+            background: #222;
+            color: #00ff00;
+            padding: 10px;
+            font-family: monospace;
+            font-size: 0.8rem;
+            border-radius: 5px;
+            margin-top: 30px;
+            max-height: 150px;
+            overflow-y: auto;
+        }
     </style>
 </head>
 <body>
 
     <h1>ClassicoFilm TV</h1>
-    <h2>Películas de Prueba</h2>
+    <h2 id="estado-titulo">Conectando con tu catálogo de Blogger...</h2>
     
-    <div class="tv-row">
-        
-        <div class="movie-card" tabindex="1" onclick="alert('Abriendo Película 1 en la tele...')">
-            <img src="https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEiw9T2EbeoK3h-uU9V3Y6M5O8ZscN3E6MvY6vD8_S6Q/s1600/portada1.jpg" onerror="this.src='https://via.placeholder.com/180x260?text=Cine+1'">
-            <p>Muelle de Brumas (1938)</p>
+    <div class="tv-row" id="catalogo-tv">
         </div>
 
-        <div class="movie-card" tabindex="2" onclick="alert('Abriendo Película 2 en la tele...')">
-            <img src="https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEiR8O_m4X7L8P6p3X5L2Q6W8Z8vC8MvY6vD8_S6Q/s1600/portada2.jpg" onerror="this.src='https://via.placeholder.com/180x260?text=Cine+2'">
-            <p>La soga (1948)</p>
-        </div>
+    <div id="consola-depuracion">Log de estado: Iniciando aplicación...</div>
 
-        <div class="movie-card" tabindex="3" onclick="alert('Abriendo Película 3 en la tele...')">
-            <img src="https://via.placeholder.com/180x260?text=Cine+Clasico">
-            <p>El Halcón Maltés (1941)</p>
-        </div>
+    <script>
+        function log(texto) {
+            document.getElementById('consola-depuracion').innerHTML += "<br>> " + texto;
+        }
 
-    </div>
+        // Probamos con el dominio .com con un puente intermedio seguro
+        const blogUrl = "https://www.classicofilm.com/feeds/posts/default?alt=json&max-results=50";
+        const puenteUrl = `https://api.allorigins.win/get?url=${encodeURIComponent(blogUrl)}`;
 
+        async function cargarCatalogo() {
+            log("Conectando al puente AllOrigins para leer Blogger...");
+            try {
+                const respuesta = await fetch(puenteUrl);
+                if (!respuesta.ok) throw new Error("El servidor puente no responde.");
+                
+                const datosPuente = await respuesta.json();
+                log("Datos recibidos del puente correctamente.");
+
+                // Convertimos el contenido en formato JSON real
+                const datosBlogger = JSON.parse(datosPuente.contents);
+                const entradas = datosBlogger.feed.entry;
+                
+                const contenedor = document.getElementById('catalogo-tv');
+                contenedor.innerHTML = "";
+
+                if (!entradas || entradas.length === 0) {
+                    log("Aviso: El feed se leyó pero está vacío.");
+                    document.getElementById('estado-titulo').innerText = "No se encontraron películas.";
+                    return;
+                }
+
+                log(`¡Éxito! Se han detectado ${entradas.length} películas automáticamente.`);
+                document.getElementById('estado-titulo').innerText = "Últimas Películas Añadidas";
+
+                entradas.forEach((entrada, index) => {
+                    const titulo = entrada.title.$t;
+                    
+                    // Extraer la portada del post
+                    let imagenUrl = "https://via.placeholder.com/180x260?text=Cine+Clasico";
+                    if (entrada.media$thumbnail) {
+                        // Cambiamos el tamaño de la miniatura para que se vea excelente en TV
+                        imagenUrl = entrada.media$thumbnail.url.replace('/s72-c/', '/s1600/');
+                    }
+
+                    const tarjeta = document.createElement('div');
+                    tarjeta.className = 'movie-card';
+                    tarjeta.tabIndex = index + 1;
+                    tarjeta.innerHTML = `
+                        <img src="${imagenUrl}" alt="${titulo}" onerror="this.src='https://via.placeholder.com/180x260?text=Cine'">
+                        <p>${titulo}</p>
+                    `;
+
+                    tarjeta.addEventListener('click', () => {
+                        alert("Has elegido: " + titulo);
+                    });
+
+                    contenedor.appendChild(tarjeta);
+                });
+
+            } catch (error) {
+                log("ERROR CRÍTICO: " + error.message);
+                document.getElementById('estado-titulo').innerText = "Error de sincronización con Blogger.";
+                document.getElementById('catalogo-tv').innerHTML = "<p style='color:red;'>Revisa el cuadro verde de abajo para ver el motivo exacto.</p>";
+            }
+        }
+
+        // Ejecutar proceso
+        cargarCatalogo();
+    </script>
 </body>
 </html>
