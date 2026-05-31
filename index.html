@@ -3,7 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ClassicoFilm TV Automática</title>
+    <title>ClassicoFilm TV Lector Universal</title>
+    <script src="https://storage.googleapis.com/google-code-archive-downloads/v2/code.google.com/feednami-client/feednami-1.3.1.min.js"></script>
     <style>
         body {
             background-color: #111;
@@ -70,81 +71,75 @@
 <body>
 
     <h1>ClassicoFilm TV</h1>
-    <h2 id="estado-titulo">Conectando con tu catálogo de Blogger...</h2>
+    <h2 id="estado-titulo">Conectando con el lector universal Feednami...</h2>
     
     <div class="tv-row" id="catalogo-tv">
         </div>
 
-    <div id="consola-depuracion">Log de estado: Iniciando aplicación...</div>
+    <div id="consola-depuracion">Log de estado: Iniciando lector...</div>
 
     <script>
         function log(texto) {
             document.getElementById('consola-depuracion').innerHTML += "<br>> " + texto;
         }
 
-        // Probamos con el dominio .com con un puente intermedio seguro
-        const blogUrl = "https://www.classicofilm.com/feeds/posts/default?alt=json&max-results=50";
-        const puenteUrl = `https://api.allorigins.win/get?url=${encodeURIComponent(blogUrl)}`;
+        // Usamos la dirección directa de feed de Blogger (pedimos 50 para probar)
+        const urlBlog = 'https://classicofilm.blogspot.com/feeds/posts/default?max-results=50';
 
-        async function cargarCatalogo() {
-            log("Conectando al puente AllOrigins para leer Blogger...");
-            try {
-                const respuesta = await fetch(puenteUrl);
-                if (!respuesta.ok) throw new Error("El servidor puente no responde.");
-                
-                const datosPuente = await respuesta.json();
-                log("Datos recibidos del puente correctamente.");
+        function cargarPeliculas() {
+            const contenedor = document.getElementById('catalogo-tv');
+            log("Llamando a Feednami para procesar: " + urlBlog);
 
-                // Convertimos el contenido en formato JSON real
-                const datosBlogger = JSON.parse(datosPuente.contents);
-                const entradas = datosBlogger.feed.entry;
-                
-                const contenedor = document.getElementById('catalogo-tv');
-                contenedor.innerHTML = "";
+            feednami.load(urlBlog, function(result) {
+                if (result.error) {
+                    log("ERROR CRÍTICO FEEDNAMI: " + result.error);
+                    document.getElementById('estado-titulo').innerText = "Error al conectar con el lector.";
+                } else {
+                    log("¡Datos recibidos con éxito desde Feednami!");
+                    contenedor.innerHTML = "";
+                    const entradas = result.feed.entries;
 
-                if (!entradas || entradas.length === 0) {
-                    log("Aviso: El feed se leyó pero está vacío.");
-                    document.getElementById('estado-titulo').innerText = "No se encontraron películas.";
-                    return;
-                }
-
-                log(`¡Éxito! Se han detectado ${entradas.length} películas automáticamente.`);
-                document.getElementById('estado-titulo').innerText = "Últimas Películas Añadidas";
-
-                entradas.forEach((entrada, index) => {
-                    const titulo = entrada.title.$t;
-                    
-                    // Extraer la portada del post
-                    let imagenUrl = "https://via.placeholder.com/180x260?text=Cine+Clasico";
-                    if (entrada.media$thumbnail) {
-                        // Cambiamos el tamaño de la miniatura para que se vea excelente en TV
-                        imagenUrl = entrada.media$thumbnail.url.replace('/s72-c/', '/s1600/');
+                    if(!entradas || entradas.length === 0) {
+                        log("Aviso: No se encontraron entradas en el feed devuelto.");
+                        document.getElementById('estado-titulo').innerText = "Catálogo vacío.";
+                        return;
                     }
 
-                    const tarjeta = document.createElement('div');
-                    tarjeta.className = 'movie-card';
-                    tarjeta.tabIndex = index + 1;
-                    tarjeta.innerHTML = `
-                        <img src="${imagenUrl}" alt="${titulo}" onerror="this.src='https://via.placeholder.com/180x260?text=Cine'">
-                        <p>${titulo}</p>
-                    `;
+                    log("Procesando " + entradas.length + " películas encontradas...");
+                    document.getElementById('estado-titulo').innerText = "Últimas Películas Añadidas (Automático)";
 
-                    tarjeta.addEventListener('click', () => {
-                        alert("Has elegido: " + titulo);
+                    entradas.forEach((entrada, index) => {
+                        const titulo = entrada.title;
+                        let imagenUrl = "https://via.placeholder.com/180x260?text=Cine";
+                        
+                        if (entrada.description) {
+                            const coincidenciaImg = entrada.description.match(/<img[^>]+src="([^">]+)"/);
+                            if (coincidenciaImg && coincidenciaImg[1]) {
+                                imagenUrl = coincidenciaImg[1];
+                            }
+                        }
+
+                        const tarjeta = document.createElement('div');
+                        tarjeta.className = 'movie-card';
+                        tarjeta.tabIndex = index + 1; 
+                        tarjeta.innerHTML = `
+                            <img src="${imagenUrl}" alt="${titulo}" onerror="this.src='https://via.placeholder.com/180x260?text=Cine'">
+                            <p>${titulo}</p>
+                        `;
+
+                        tarjeta.addEventListener('click', () => {
+                            alert("Has seleccionado: " + titulo);
+                        });
+
+                        contenedor.appendChild(tarjeta);
                     });
-
-                    contenedor.appendChild(tarjeta);
-                });
-
-            } catch (error) {
-                log("ERROR CRÍTICO: " + error.message);
-                document.getElementById('estado-titulo').innerText = "Error de sincronización con Blogger.";
-                document.getElementById('catalogo-tv').innerHTML = "<p style='color:red;'>Revisa el cuadro verde de abajo para ver el motivo exacto.</p>";
-            }
+                    log("¡Catálogo renderizado correctamente!");
+                }
+            });
         }
 
-        // Ejecutar proceso
-        cargarCatalogo();
+        // Ejecutar
+        cargarPeliculas();
     </script>
 </body>
 </html>
