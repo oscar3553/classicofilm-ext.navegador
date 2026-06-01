@@ -11,12 +11,11 @@
             font-family: 'Segoe UI', Arial, sans-serif; 
             margin: 0; 
             padding: 30px; 
-            overflow: hidden; /* Evitamos que el navegador haga scroll por su cuenta */
+            overflow: hidden;
         }
         h1 { color: #e50914; font-size: 2.8rem; margin: 0 0 5px 0; font-weight: bold; }
         h2 { font-size: 1.4rem; margin: 0 0 30px 0; color: #aaa; }
         
-        /* Contenedor del Panel fijo */
         .tv-grid-wrapper {
             width: 100%;
             height: calc(100vh - 150px);
@@ -26,9 +25,9 @@
 
         .tv-grid { 
             display: grid; 
-            grid-template-columns: repeat(6, 1fr); /* Forzamos 6 columnas fijas para un movimiento instantáneo */
+            grid-template-columns: repeat(6, 1fr); 
             gap: 25px; 
-            transition: transform 0.15s ease-out; /* Animación de subida/bajada ultra rápida */
+            transition: transform 0.15s ease-out; 
         }
 
         .movie-card { 
@@ -36,7 +35,6 @@
             border-radius: 10px; 
             overflow: hidden; 
             border: 4px solid transparent; 
-            cursor: pointer; 
             box-sizing: border-box;
         }
         
@@ -62,7 +60,53 @@
             text-overflow: ellipsis; 
         }
 
-        /* Pantalla completa limpia para el reproductor */
+        /* FICHA DE DETALLES (ESTILO NETFLIX INTERMEDIO) */
+        #detalles-modal {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0, 0, 0, 0.9);
+            z-index: 5000;
+            align-items: center;
+            justify-content: center;
+        }
+        .modal-contenido {
+            background: #1c1c1c;
+            padding: 40px;
+            border-radius: 15px;
+            display: flex;
+            gap: 40px;
+            max-width: 800px;
+            border: 3px solid #333;
+            align-items: center;
+        }
+        .modal-contenido img {
+            width: 240px;
+            height: 340px;
+            object-fit: cover;
+            border-radius: 8px;
+        }
+        .modal-info h3 { margin: 0 0 20px 0; font-size: 2.2rem; color: #fff; }
+        
+        /* Botón de reproducción enfocado para el mando */
+        .btn-play {
+            background: #e50914;
+            color: white;
+            border: 4px solid transparent;
+            padding: 15px 40px;
+            font-size: 1.4rem;
+            font-weight: bold;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .btn-play.focused {
+            border-color: white;
+            transform: scale(1.08);
+            box-shadow: 0 0 15px #fff;
+        }
+
+        /* REPRODUCTOR LIMPIO */
         #video-container { 
             display: none; 
             position: fixed; 
@@ -82,7 +126,16 @@
         <div class="tv-grid" id="catalogo-tv"></div>
     </div>
 
-    <!-- Contenedor del reproductor 100% limpio (Sin cartel de cerrar) -->
+    <div id="detalles-modal">
+        <div class="modal-contenido">
+            <img id="modal-img" src="" alt="Portada">
+            <div class="modal-info">
+                <h3 id="modal-titulo">Título de la Película</h3>
+                <button id="btn-reproducir-modal" class="btn-play">▶ REPRODUCIR</button>
+            </div>
+        </div>
+    </div>
+
     <div id="video-container">
         <iframe id="reproductor" src="" allow="autoplay; fullscreen" allowfullscreen></iframe>
     </div>
@@ -92,8 +145,11 @@
         const titulosRegistrados = new Set();
         let indiceEnFoco = 0;
         let peliculasElementos = [];
-        let reproductorAbierto = false;
-        const columnasFijas = 6; // Estructura fija para que la tele no sufra pensando los saltos
+        
+        // Estados de la interfaz
+        let estadoActual = "CATALOGO"; // CATALOGO, MODAL, REPRODUCTOR
+        let urlVideoGlobal = "";
+        const columnasFijas = 6;
 
         function agregarPeliculasAlCatalogo(entradas) {
             const contenedor = document.getElementById('catalogo-tv');
@@ -115,8 +171,6 @@
                 if (coincidencia && coincidencia[1]) {
                     urlDzen = coincidencia[1];
                     if (urlDzen.startsWith('//')) urlDzen = 'https:' + urlDzen;
-                    
-                    // Modificamos la URL de Dzen para que intente el AutoPlay automáticamente si el navegador lo permite
                     if (!urlDzen.includes('autoplay')) {
                         urlDzen += (urlDzen.includes('?') ? '&' : '?') + 'autoplay=1&auto_play=1';
                     }
@@ -126,8 +180,8 @@
                 tarjeta.className = 'movie-card';
                 tarjeta.innerHTML = `<img src="${imagenUrl}"><p>${titulo}</p>`;
                 tarjeta.dataset.video = urlDzen;
-
-                tarjeta.addEventListener('click', () => abrirVideo(urlDzen));
+                tarjeta.dataset.title = titulo;
+                tarjeta.dataset.img = imagenUrl;
 
                 contenedor.appendChild(tarjeta);
                 peliculasElementos.push(tarjeta);
@@ -137,22 +191,24 @@
             document.getElementById('estado-titulo').innerText = `Catálogo de Cine Clásico (${totalPeliculas} películas)`;
             
             if (peliculasElementos.length > 0 && indiceEnFoco === 0) {
-                actualizarFoco();
+                // Forzamos el foco inicial para que responda el mando inmediatamente sin clics manuales
+                setTimeout(actualizarFoco, 500);
             }
         }
 
         function actualizarFoco() {
+            if (estadoActual !== "CATALOGO") return;
+
             peliculasElementos.forEach(el => el.classList.remove('focused'));
             
             if (peliculasElementos[indiceEnFoco]) {
                 const elementoDestino = peliculasElementos[indiceEnFoco];
                 elementoDestino.classList.add('focused');
-                
-                // Cálculo ultra rápido de desplazamiento vertical
+                elementoDestino.focus(); // Forzamos foco de navegador
+
                 const filaActual = Math.floor(indiceEnFoco / columnasFijas);
                 const contenedorGrid = document.getElementById('catalogo-tv');
                 
-                // Desplazamos el grid hacia arriba en bloques controlados (350px por fila aproximado)
                 if (filaActual > 1) {
                     const desplazar = (filaActual - 1) * 360;
                     contenedorGrid.style.transform = `translateY(-${desplazar}px)`;
@@ -162,98 +218,102 @@
             }
         }
 
-        // CONTROL EXCLUSIVO POR MANDO DE TV
+        // GESTIÓN DE EVENTOS DEL MANDO DE TV
         document.addEventListener('keydown', function(e) {
-            // CÓDIGOS DE BOTONES DE MANDOS SMART TV (LG webOS / Tizen / Estándar)
-            const KEY_OK = 13;
             const KEY_BACK_LG = 461; 
             const KEY_BACK_STANDARD = 8;
             const KEY_ESCAPE = 27;
-            const KEY_PLAY = 415;
-            const KEY_PAUSE = 19;
 
-            if (reproductorAbierto) {
-                // Si el reproductor está abierto, capturamos el botón ATRÁS para cerrar el vídeo
+            // 1. SI EL VIDEO ESTÁ ABIERTO
+            if (estadoActual === "REPRODUCTOR") {
                 if (e.keyCode === KEY_BACK_LG || e.keyCode === KEY_BACK_STANDARD || e.keyCode === KEY_ESCAPE || e.key === "Backspace") {
                     e.preventDefault();
                     cerrarVideo();
                 }
-                
-                // Control Remoto: Play / Pause directo al iframe si es compatible
-                const iframe = document.getElementById('reproductor');
-                if (e.keyCode === KEY_PLAY) {
-                    iframe.contentWindow.postMessage('{"event":"command","func":"playVideo","args":""}', '*');
-                    iframe.contentWindow.postMessage('{"command":"play"}', '*');
-                }
-                if (e.keyCode === KEY_PAUSE) {
-                    iframe.contentWindow.postMessage('{"event":"command","func":"pauseVideo","args":""}', '*');
-                    iframe.contentWindow.postMessage('{"command":"pause"}', '*');
+                return;
+            }
+
+            // 2. SI LA FICHA DE DETALLES ESTÁ ABIERTA
+            if (estadoActual === "MODAL") {
+                if (e.key === "Enter" || e.keyCode === 13) {
+                    e.preventDefault();
+                    iniciarReproductorReal();
+                } else if (e.keyCode === KEY_BACK_LG || e.keyCode === KEY_BACK_STANDARD || e.keyCode === KEY_ESCAPE || e.key === "Backspace") {
+                    e.preventDefault();
+                    cerrarModal();
                 }
                 return;
             }
 
-            // Navegación fluida en el catálogo
+            // 3. EN EL CATÁLOGO (Navegación por flechas)
             switch(e.key) {
                 case "ArrowLeft":
                     e.preventDefault();
-                    if (indiceEnFoco > 0) {
-                        indiceEnFoco--;
-                        actualizarFoco();
-                    }
+                    if (indiceEnFoco > 0) { indiceEnFoco--; actualizarFoco(); }
                     break;
                 case "ArrowRight":
                     e.preventDefault();
-                    if (indiceEnFoco < peliculasElementos.length - 1) {
-                        indiceEnFoco++;
-                        actualizarFoco();
-                    }
+                    if (indiceEnFoco < peliculasElementos.length - 1) { indiceEnFoco++; actualizarFoco(); }
                     break;
                 case "ArrowUp":
                     e.preventDefault();
-                    if (indiceEnFoco - columnasFijas >= 0) {
-                        indiceEnFoco -= columnasFijas;
-                        actualizarFoco();
-                    }
+                    if (indiceEnFoco - columnasFijas >= 0) { indiceEnFoco -= columnasFijas; actualizarFoco(); }
                     break;
                 case "ArrowDown":
                     e.preventDefault();
-                    if (indiceEnFoco + columnasFijas < peliculasElementos.length) {
-                        indiceEnFoco += columnasFijas;
-                        actualizarFoco();
-                    }
+                    if (indiceEnFoco + columnasFijas < peliculasElementos.length) { indiceEnFoco += columnasFijas; actualizarFoco(); }
                     break;
                 case "Enter":
                     e.preventDefault();
-                    const urlVideo = peliculasElementos[indiceEnFoco].dataset.video;
-                    if (urlVideo) abrirVideo(urlVideo);
+                    const tarjeta = peliculasElementos[indiceEnFoco];
+                    if (tarjeta) {
+                        mostrarFichaDetalles(tarjeta.dataset.title, tarjeta.dataset.img, tarjeta.dataset.video);
+                    }
                     break;
             }
         });
 
-        function abrirVideo(url) {
-            if (!url) return;
-            reproductorAbierto = true;
+        // Funciones de la Ficha Intermedia
+        function mostrarFichaDetalles(titulo, img, videoUrl) {
+            estadoActual = "MODAL";
+            urlVideoGlobal = videoUrl;
+
+            document.getElementById('modal-titulo').innerText = titulo;
+            document.getElementById('modal-img').src = img;
+            document.getElementById('detalles-modal').style.display = "flex";
             
-            const contenedorVideo = document.getElementById('video-container');
-            const iframe = document.getElementById('reproductor');
+            // Colocamos el foco directamente en el botón de reproducir
+            document.getElementById('btn-reproducir-modal').classList.add('focused');
+            document.getElementById('btn-reproducir-modal').focus();
+        }
+
+        function cerrarModal() {
+            estadoActual = "CATALOGO";
+            document.getElementById('detalles-modal').style.display = "none";
+            document.getElementById('btn-reproducir-modal').classList.remove('focused');
+            actualizarFoco();
+        }
+
+        function iniciarReproductorReal() {
+            if (!urlVideoGlobal) return;
+            estadoActual = "REPRODUCTOR";
             
-            iframe.src = url;
-            contenedorVideo.style.display = "block";
-            
-            // Forzamos el foco dentro del contenedor del vídeo para aislar el menú trasero
-            contenedorVideo.focus();
+            document.getElementById('detalles-modal').style.display = "none";
+            document.getElementById('reproductor').src = urlVideoGlobal;
+            document.getElementById('video-container').style.display = "block";
+            document.getElementById('video-container').focus();
         }
 
         function cerrarVideo() {
-            reproductorAbierto = false;
             document.getElementById('video-container').style.display = "none";
             document.getElementById('reproductor').src = "";
             
-            // Al regresar, el catálogo recupera el control de forma inmediata
-            setTimeout(actualizarFoco, 50);
+            // En lugar de ir al catálogo, volvemos a abrir la ficha de esa película de forma limpia
+            const tarjeta = peliculasElementos[indiceEnFoco];
+            mostrarFichaDetalles(tarjeta.dataset.title, tarjeta.dataset.img, tarjeta.dataset.video);
         }
 
-        // Motor de inyección de datos de Blogger
+        // Carga desde Blogger
         function bloqueNuevas(datos) { agregarPeliculasAlCatalogo(datos.feed.entry); }
         function bloqueMedio(datos) { agregarPeliculasAlCatalogo(datos.feed.entry); }
         function bloqueAntiguas(datos) { agregarPeliculasAlCatalogo(datos.feed.entry); }
@@ -272,7 +332,7 @@
             document.body.appendChild(s3);
         }
 
-        lanzarCargaCompleta();
+        window.onload = lanzarCargaCompleta;
     </script>
 </body>
 </html>
