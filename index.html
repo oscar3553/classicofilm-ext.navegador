@@ -11,34 +11,39 @@
             font-family: 'Segoe UI', Arial, sans-serif; 
             margin: 0; 
             padding: 30px; 
-            overflow-y: auto; /* Permitimos scroll vertical para el panel */
+            overflow: hidden; /* Evitamos que el navegador haga scroll por su cuenta */
         }
         h1 { color: #e50914; font-size: 2.8rem; margin: 0 0 5px 0; font-weight: bold; }
         h2 { font-size: 1.4rem; margin: 0 0 30px 0; color: #aaa; }
         
-        /* Contenedor tipo Panel / Rejilla estilo Netflix */
-        .tv-grid { 
-            display: grid; 
-            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); 
-            gap: 25px; 
-            padding-bottom: 60px;
+        /* Contenedor del Panel fijo */
+        .tv-grid-wrapper {
+            width: 100%;
+            height: calc(100vh - 150px);
+            overflow: hidden;
+            position: relative;
         }
 
-        /* Tarjeta de película optimizada */
+        .tv-grid { 
+            display: grid; 
+            grid-template-columns: repeat(6, 1fr); /* Forzamos 6 columnas fijas para un movimiento instantáneo */
+            gap: 25px; 
+            transition: transform 0.15s ease-out; /* Animación de subida/bajada ultra rápida */
+        }
+
         .movie-card { 
             background-color: #222; 
             border-radius: 10px; 
             overflow: hidden; 
-            transition: transform 0.2s, border-color 0.2s, box-shadow 0.2s; 
             border: 4px solid transparent; 
             cursor: pointer; 
+            box-sizing: border-box;
         }
         
-        /* Efecto de selección limpio para el mando */
         .movie-card.focused { 
-            transform: scale(1.06); 
+            transform: scale(1.05); 
             border-color: #e50914; 
-            box-shadow: 0 0 15px rgba(229, 9, 20, 0.6);
+            box-shadow: 0 0 20px rgba(229, 9, 20, 0.8);
             outline: none; 
         }
         .movie-card img { 
@@ -57,7 +62,7 @@
             text-overflow: ellipsis; 
         }
 
-        /* Pantalla completa del reproductor */
+        /* Pantalla completa limpia para el reproductor */
         #video-container { 
             display: none; 
             position: fixed; 
@@ -66,32 +71,20 @@
             z-index: 9999; 
         }
         #video-container iframe { width: 100%; height: 100%; border: none; }
-        
-        #btn-cerrar { 
-            position: absolute; 
-            top: 30px; right: 30px; 
-            background: #e50914; 
-            color: white; border: none; 
-            padding: 12px 25px; font-size: 1.1rem; 
-            border-radius: 6px; cursor: pointer; 
-            font-weight: bold; z-index: 10000; 
-        }
-        #btn-cerrar.focused {
-            border: 3px solid white;
-            box-shadow: 0 0 10px #fff;
-        }
     </style>
 </head>
 <body>
 
     <h1>ClassicoFilm TV</h1>
-    <h2 id="estado-titulo">Cargando catálogo en modo panel...</h2>
+    <h2 id="estado-titulo">Cargando cine clásico...</h2>
     
-    <div class="tv-grid" id="catalogo-tv"></div>
+    <div class="tv-grid-wrapper">
+        <div class="tv-grid" id="catalogo-tv"></div>
+    </div>
 
+    <!-- Contenedor del reproductor 100% limpio (Sin cartel de cerrar) -->
     <div id="video-container">
-        <button id="btn-cerrar" onclick="cerrarVideo()">❌ CERRAR PELÍCULA</button>
-        <iframe id="reproductor" src="" allowfullscreen></iframe>
+        <iframe id="reproductor" src="" allow="autoplay; fullscreen" allowfullscreen></iframe>
     </div>
 
     <script>
@@ -100,6 +93,7 @@
         let indiceEnFoco = 0;
         let peliculasElementos = [];
         let reproductorAbierto = false;
+        const columnasFijas = 6; // Estructura fija para que la tele no sufra pensando los saltos
 
         function agregarPeliculasAlCatalogo(entradas) {
             const contenedor = document.getElementById('catalogo-tv');
@@ -121,6 +115,11 @@
                 if (coincidencia && coincidencia[1]) {
                     urlDzen = coincidencia[1];
                     if (urlDzen.startsWith('//')) urlDzen = 'https:' + urlDzen;
+                    
+                    // Modificamos la URL de Dzen para que intente el AutoPlay automáticamente si el navegador lo permite
+                    if (!urlDzen.includes('autoplay')) {
+                        urlDzen += (urlDzen.includes('?') ? '&' : '?') + 'autoplay=1&auto_play=1';
+                    }
                 }
 
                 const tarjeta = document.createElement('div');
@@ -149,28 +148,54 @@
                 const elementoDestino = peliculasElementos[indiceEnFoco];
                 elementoDestino.classList.add('focused');
                 
-                // Hace que la pantalla de la tele baje o suba sola siguiendo la película seleccionada
-                elementoDestino.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                // Cálculo ultra rápido de desplazamiento vertical
+                const filaActual = Math.floor(indiceEnFoco / columnasFijas);
+                const contenedorGrid = document.getElementById('catalogo-tv');
+                
+                // Desplazamos el grid hacia arriba en bloques controlados (350px por fila aproximado)
+                if (filaActual > 1) {
+                    const desplazar = (filaActual - 1) * 360;
+                    contenedorGrid.style.transform = `translateY(-${desplazar}px)`;
+                } else {
+                    contenedorGrid.style.transform = `translateY(0px)`;
+                }
             }
         }
 
-        // CONTROL INTELIGENTE PARA EVITAR EL DOBLE SALTO EN SMART TV
+        // CONTROL EXCLUSIVO POR MANDO DE TV
         document.addEventListener('keydown', function(e) {
+            // CÓDIGOS DE BOTONES DE MANDOS SMART TV (LG webOS / Tizen / Estándar)
+            const KEY_OK = 13;
+            const KEY_BACK_LG = 461; 
+            const KEY_BACK_STANDARD = 8;
+            const KEY_ESCAPE = 27;
+            const KEY_PLAY = 415;
+            const KEY_PAUSE = 19;
+
             if (reproductorAbierto) {
-                if (e.keyCode === 13 || e.key === "Enter" || e.keyCode === 461 || e.key === "Backspace" || e.key === "Escape") {
+                // Si el reproductor está abierto, capturamos el botón ATRÁS para cerrar el vídeo
+                if (e.keyCode === KEY_BACK_LG || e.keyCode === KEY_BACK_STANDARD || e.keyCode === KEY_ESCAPE || e.key === "Backspace") {
                     e.preventDefault();
                     cerrarVideo();
+                }
+                
+                // Control Remoto: Play / Pause directo al iframe si es compatible
+                const iframe = document.getElementById('reproductor');
+                if (e.keyCode === KEY_PLAY) {
+                    iframe.contentWindow.postMessage('{"event":"command","func":"playVideo","args":""}', '*');
+                    iframe.contentWindow.postMessage('{"command":"play"}', '*');
+                }
+                if (e.keyCode === KEY_PAUSE) {
+                    iframe.contentWindow.postMessage('{"event":"command","func":"pauseVideo","args":""}', '*');
+                    iframe.contentWindow.postMessage('{"command":"pause"}', '*');
                 }
                 return;
             }
 
-            // Calculamos cuántas columnas reales se ven en la tele para saber cuánto saltar arriba/abajo
-            const contenedor = document.getElementById('catalogo-tv');
-            const columnas = window.getComputedStyle(contenedor).getPropertyValue('grid-template-columns').split(' ').length;
-
+            // Navegación fluida en el catálogo
             switch(e.key) {
                 case "ArrowLeft":
-                    e.preventDefault(); // Evita que la tele mueva el foco por su cuenta
+                    e.preventDefault();
                     if (indiceEnFoco > 0) {
                         indiceEnFoco--;
                         actualizarFoco();
@@ -183,17 +208,17 @@
                         actualizarFoco();
                     }
                     break;
-                case "ArrowUp": // Subir una fila completa hacia arriba
+                case "ArrowUp":
                     e.preventDefault();
-                    if (indiceEnFoco - columnas >= 0) {
-                        indiceEnFoco -= columnas;
+                    if (indiceEnFoco - columnasFijas >= 0) {
+                        indiceEnFoco -= columnasFijas;
                         actualizarFoco();
                     }
                     break;
-                case "ArrowDown": // Bajar una fila completa hacia abajo
+                case "ArrowDown":
                     e.preventDefault();
-                    if (indiceEnFoco + columnas < peliculasElementos.length) {
-                        indiceEnFoco += columnas;
+                    if (indiceEnFoco + columnasFijas < peliculasElementos.length) {
+                        indiceEnFoco += columnasFijas;
                         actualizarFoco();
                     }
                     break;
@@ -208,18 +233,27 @@
         function abrirVideo(url) {
             if (!url) return;
             reproductorAbierto = true;
-            document.getElementById('reproductor').src = url;
-            document.getElementById('video-container').style.display = "block";
-            document.getElementById('btn-cerrar').classList.add('focused');
+            
+            const contenedorVideo = document.getElementById('video-container');
+            const iframe = document.getElementById('reproductor');
+            
+            iframe.src = url;
+            contenedorVideo.style.display = "block";
+            
+            // Forzamos el foco dentro del contenedor del vídeo para aislar el menú trasero
+            contenedorVideo.focus();
         }
 
         function cerrarVideo() {
             reproductorAbierto = false;
             document.getElementById('video-container').style.display = "none";
             document.getElementById('reproductor').src = "";
-            actualizarFoco();
+            
+            // Al regresar, el catálogo recupera el control de forma inmediata
+            setTimeout(actualizarFoco, 50);
         }
 
+        // Motor de inyección de datos de Blogger
         function bloqueNuevas(datos) { agregarPeliculasAlCatalogo(datos.feed.entry); }
         function bloqueMedio(datos) { agregarPeliculasAlCatalogo(datos.feed.entry); }
         function bloqueAntiguas(datos) { agregarPeliculasAlCatalogo(datos.feed.entry); }
