@@ -30,15 +30,19 @@
             transition: transform 0.15s ease-out; 
         }
 
+        /* Botón/Tarjeta accesible por el navegador */
         .movie-card { 
             background-color: #222; 
             border-radius: 10px; 
             overflow: hidden; 
             border: 4px solid transparent; 
             box-sizing: border-box;
+            display: block;
+            text-decoration: none;
+            color: white;
         }
         
-        .movie-card.focused { 
+        .movie-card:focus, .movie-card.focused { 
             transform: scale(1.05); 
             border-color: #e50914; 
             box-shadow: 0 0 20px rgba(229, 9, 20, 0.8);
@@ -60,12 +64,12 @@
             text-overflow: ellipsis; 
         }
 
-        /* FICHA DE DETALLES (ESTILO NETFLIX INTERMEDIO) */
+        /* FICHA DE DETALLES (ESTILO NETFLIX) */
         #detalles-modal {
             display: none;
             position: fixed;
             top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0, 0, 0, 0.9);
+            background: rgba(0, 0, 0, 0.95);
             z-index: 5000;
             align-items: center;
             justify-content: center;
@@ -88,8 +92,9 @@
         }
         .modal-info h3 { margin: 0 0 20px 0; font-size: 2.2rem; color: #fff; }
         
-        /* Botón de reproducción enfocado para el mando */
+        /* Enlace real de reproducción */
         .btn-play {
+            display: inline-block;
             background: #e50914;
             color: white;
             border: 4px solid transparent;
@@ -97,47 +102,37 @@
             font-size: 1.4rem;
             font-weight: bold;
             border-radius: 8px;
+            text-decoration: none;
             cursor: pointer;
             transition: all 0.2s;
         }
-        .btn-play.focused {
+        .btn-play:focus, .btn-play.focused {
             border-color: white;
             transform: scale(1.08);
             box-shadow: 0 0 15px #fff;
+            outline: none;
         }
-
-        /* REPRODUCTOR LIMPIO */
-        #video-container { 
-            display: none; 
-            position: fixed; 
-            top: 0; left: 0; width: 100%; height: 100%; 
-            background: #000; 
-            z-index: 9999; 
-        }
-        #video-container iframe { width: 100%; height: 100%; border: none; }
     </style>
 </head>
 <body>
 
-    <h1>ClassicoFilm TV</h1>
-    <h2 id="estado-titulo">Cargando cine clásico...</h2>
+    <h1 id="app-title">ClassicoFilm TV</h1>
+    <h2 id="estado-titulo">Cargando catálogo premium...</h2>
     
     <div class="tv-grid-wrapper">
         <div class="tv-grid" id="catalogo-tv"></div>
     </div>
 
+    <!-- Ficha Intermedia -->
     <div id="detalles-modal">
         <div class="modal-contenido">
-            <img id="modal-img" src="" alt="Portada">
+            <img id="modal-img" src="">
             <div class="modal-info">
-                <h3 id="modal-titulo">Título de la Película</h3>
-                <button id="btn-reproducir-modal" class="btn-play">▶ REPRODUCIR</button>
+                <h3 id="modal-titulo">Título</h3>
+                <!-- Ahora es un enlace real href que la tele entiende perfectamente -->
+                <a id="btn-reproducir-modal" class="btn-play" href="#">▶ REPRODUCIR</a>
             </div>
         </div>
-    </div>
-
-    <div id="video-container">
-        <iframe id="reproductor" src="" allow="autoplay; fullscreen" allowfullscreen></iframe>
     </div>
 
     <script>
@@ -145,10 +140,7 @@
         const titulosRegistrados = new Set();
         let indiceEnFoco = 0;
         let peliculasElementos = [];
-        
-        // Estados de la interfaz
-        let estadoActual = "CATALOGO"; // CATALOGO, MODAL, REPRODUCTOR
-        let urlVideoGlobal = "";
+        let estadoActual = "CATALOGO"; 
         const columnasFijas = 6;
 
         function agregarPeliculasAlCatalogo(entradas) {
@@ -171,13 +163,13 @@
                 if (coincidencia && coincidencia[1]) {
                     urlDzen = coincidencia[1];
                     if (urlDzen.startsWith('//')) urlDzen = 'https:' + urlDzen;
-                    if (!urlDzen.includes('autoplay')) {
-                        urlDzen += (urlDzen.includes('?') ? '&' : '?') + 'autoplay=1&auto_play=1';
-                    }
                 }
 
-                const tarjeta = document.createElement('div');
+                // Usamos etiquetas <a> con href e indexación para obligar a la tele a hacerles caso nativamente
+                const tarjeta = document.createElement('a');
+                tarjeta.href = "#";
                 tarjeta.className = 'movie-card';
+                tarjeta.setAttribute('tabindex', '0');
                 tarjeta.innerHTML = `<img src="${imagenUrl}"><p>${titulo}</p>`;
                 tarjeta.dataset.video = urlDzen;
                 tarjeta.dataset.title = titulo;
@@ -191,8 +183,9 @@
             document.getElementById('estado-titulo').innerText = `Catálogo de Cine Clásico (${totalPeliculas} películas)`;
             
             if (peliculasElementos.length > 0 && indiceEnFoco === 0) {
-                // Forzamos el foco inicial para que responda el mando inmediatamente sin clics manuales
-                setTimeout(actualizarFoco, 500);
+                // TRUCO MAESTRO: Forzamos el foco real del navegador repitiéndolo para asegurar que "despierte" el mando
+                setTimeout(actualizarFoco, 300);
+                setTimeout(actualizarFoco, 800);
             }
         }
 
@@ -204,7 +197,7 @@
             if (peliculasElementos[indiceEnFoco]) {
                 const elementoDestino = peliculasElementos[indiceEnFoco];
                 elementoDestino.classList.add('focused');
-                elementoDestino.focus(); // Forzamos foco de navegador
+                elementoDestino.focus(); // Obliga al navegador a mirar aquí
 
                 const filaActual = Math.floor(indiceEnFoco / columnasFijas);
                 const contenedorGrid = document.getElementById('catalogo-tv');
@@ -218,26 +211,17 @@
             }
         }
 
-        // GESTIÓN DE EVENTOS DEL MANDO DE TV
+        // CONTROL DE MANDOS LG / WEBOS
         document.addEventListener('keydown', function(e) {
             const KEY_BACK_LG = 461; 
             const KEY_BACK_STANDARD = 8;
             const KEY_ESCAPE = 27;
 
-            // 1. SI EL VIDEO ESTÁ ABIERTO
-            if (estadoActual === "REPRODUCTOR") {
-                if (e.keyCode === KEY_BACK_LG || e.keyCode === KEY_BACK_STANDARD || e.keyCode === KEY_ESCAPE || e.key === "Backspace") {
-                    e.preventDefault();
-                    cerrarVideo();
-                }
-                return;
-            }
-
-            // 2. SI LA FICHA DE DETALLES ESTÁ ABIERTA
             if (estadoActual === "MODAL") {
                 if (e.key === "Enter" || e.keyCode === 13) {
-                    e.preventDefault();
-                    iniciarReproductorReal();
+                    // Al pulsar OK en reproducir, redirigimos la pestaña entera al vídeo para que funcione nativo
+                    const btnPlay = document.getElementById('btn-reproducir-modal');
+                    window.location.href = btnPlay.href;
                 } else if (e.keyCode === KEY_BACK_LG || e.keyCode === KEY_BACK_STANDARD || e.keyCode === KEY_ESCAPE || e.key === "Backspace") {
                     e.preventDefault();
                     cerrarModal();
@@ -245,7 +229,6 @@
                 return;
             }
 
-            // 3. EN EL CATÁLOGO (Navegación por flechas)
             switch(e.key) {
                 case "ArrowLeft":
                     e.preventDefault();
@@ -273,18 +256,17 @@
             }
         });
 
-        // Funciones de la Ficha Intermedia
         function mostrarFichaDetalles(titulo, img, videoUrl) {
             estadoActual = "MODAL";
-            urlVideoGlobal = videoUrl;
-
             document.getElementById('modal-titulo').innerText = titulo;
             document.getElementById('modal-img').src = img;
-            document.getElementById('detalles-modal').style.display = "flex";
             
-            // Colocamos el foco directamente en el botón de reproducir
-            document.getElementById('btn-reproducir-modal').classList.add('focused');
-            document.getElementById('btn-reproducir-modal').focus();
+            const btnPlay = document.getElementById('btn-reproducir-modal');
+            btnPlay.href = videoUrl; // Le inyectamos la URL directa
+            
+            document.getElementById('detalles-modal').style.display = "flex";
+            btnPlay.classList.add('focused');
+            btnPlay.focus();
         }
 
         function cerrarModal() {
@@ -294,26 +276,6 @@
             actualizarFoco();
         }
 
-        function iniciarReproductorReal() {
-            if (!urlVideoGlobal) return;
-            estadoActual = "REPRODUCTOR";
-            
-            document.getElementById('detalles-modal').style.display = "none";
-            document.getElementById('reproductor').src = urlVideoGlobal;
-            document.getElementById('video-container').style.display = "block";
-            document.getElementById('video-container').focus();
-        }
-
-        function cerrarVideo() {
-            document.getElementById('video-container').style.display = "none";
-            document.getElementById('reproductor').src = "";
-            
-            // En lugar de ir al catálogo, volvemos a abrir la ficha de esa película de forma limpia
-            const tarjeta = peliculasElementos[indiceEnFoco];
-            mostrarFichaDetalles(tarjeta.dataset.title, tarjeta.dataset.img, tarjeta.dataset.video);
-        }
-
-        // Carga desde Blogger
         function bloqueNuevas(datos) { agregarPeliculasAlCatalogo(datos.feed.entry); }
         function bloqueMedio(datos) { agregarPeliculasAlCatalogo(datos.feed.entry); }
         function bloqueAntiguas(datos) { agregarPeliculasAlCatalogo(datos.feed.entry); }
@@ -332,7 +294,11 @@
             document.body.appendChild(s3);
         }
 
-        window.onload = lanzarCargaCompleta;
+        window.onload = function() {
+            lanzarCargaCompleta();
+            // Obligamos a la tele a poner el foco en el título nada más arrancar
+            document.getElementById('app-title').focus();
+        };
     </script>
 </body>
 </html>
