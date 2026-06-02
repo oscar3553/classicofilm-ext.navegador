@@ -9,18 +9,18 @@ jobs:
 
     steps:
     - name: Descargar el código del repositorio
-      uses: actions/checkout@v3
+      uses: actions/checkout@v4
 
-    - name: Configurar Node.js Estable para LG
-      uses: actions/setup-node@v3
+    - name: Configurar Node.js
+      uses: actions/setup-node@v4
       with:
-        node-version: 16 # Usamos la versión 16 porque es donde la herramienta de LG no se rompe
+        node-version: 20
 
-    - name: Instalar herramientas CLI de LG webOS
-      run: npm install -g @webos-tools/cli
+    - name: Instalar empaquetador alternativo webOS (Sin errores de LG)
+      run: npm install -g webos-packager
 
     - name: Empaquetar la aplicación (.ipk)
-      run: ares-package .
+      run: webos-packager .
       
     - name: Guardar el archivo .ipk generado
       uses: actions/upload-artifact@v4
