@@ -11,10 +11,10 @@ jobs:
     - name: Descargar el código del repositorio
       uses: actions/checkout@v4
 
-    - name: Configurar Node.js
+    - name: Configurar Node.js (Versión Moderna 24)
       uses: actions/setup-node@v4
       with:
-        node-version: 20
+        node-version: 24
 
     - name: Instalar herramientas CLI de LG webOS
       run: npm install -g @webos-tools/cli
