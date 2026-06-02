@@ -1,17 +1,19 @@
 name: Generar IPK de Clasicofilm TV
 
 on:
-  workflow_dispatch: # Nos permite pulsar el botón para compilar cuando queramos
+  workflow_dispatch:
 
 jobs:
   build:
     runs-on: ubuntu-latest
+    env:
+      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true # Forzamos Node 24 para eliminar la advertencia
 
     steps:
     - name: Descargar el código del repositorio
       uses: actions/checkout@v4
 
-    - name: Configurar Node.js (Versión Moderna 24)
+    - name: Configurar Node.js
       uses: actions/setup-node@v4
       with:
         node-version: 24
@@ -19,9 +21,12 @@ jobs:
     - name: Instalar herramientas CLI de LG webOS
       run: npm install -g @webos-tools/cli
 
-    - name: Empaquetar la aplicación (.ipk)
-      run: ares-package .
+    - name: Verificar archivos en el repositorio
+      run: ls -la # Esto nos listará los archivos en pantalla para comprobar que todo está en su sitio
 
+    - name: Empaquetar la aplicación (.ipk) con volcado de errores
+      run: ares-package . --verbose # El modo verbose nos dirá EXACTAMENTE qué le molesta a LG
+      
     - name: Guardar el archivo .ipk generado
       uses: actions/upload-artifact@v4
       with:
