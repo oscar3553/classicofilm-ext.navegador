@@ -10,15 +10,25 @@
             color: #fff; 
             font-family: 'Segoe UI', Arial, sans-serif; 
             margin: 0; 
-            padding: 30px; 
+            padding: 20px 30px; 
             overflow: hidden;
         }
-        h1 { color: #e50914; font-size: 2.8rem; margin: 0 0 5px 0; font-weight: bold; }
-        h2 { font-size: 1.4rem; margin: 0 0 30px 0; color: #aaa; }
+        
+        /* Contenedor del Logotipo Principal */
+        .logo-container {
+            text-align: center;
+            margin-bottom: 5px;
+        }
+        .logo-container img {
+            max-height: 75px; /* Ajuste de tamaño equilibrado para TV */
+            width: auto;
+        }
+
+        h2 { font-size: 1.3rem; margin: 0 0 25px 0; color: #aaa; text-align: center; }
         
         .tv-grid-wrapper {
             width: 100%;
-            height: calc(100vh - 150px);
+            height: calc(100vh - 160px);
             overflow: hidden;
             position: relative;
         }
@@ -30,7 +40,6 @@
             transition: transform 0.15s ease-out; 
         }
 
-        /* Botón/Tarjeta accesible por el navegador */
         .movie-card { 
             background-color: #222; 
             border-radius: 10px; 
@@ -64,7 +73,7 @@
             text-overflow: ellipsis; 
         }
 
-        /* FICHA DE DETALLES (ESTILO NETFLIX) */
+        /* FICHA DE DETALLES (EL GADGET MEJORADO) */
         #detalles-modal {
             display: none;
             position: fixed;
@@ -92,7 +101,6 @@
         }
         .modal-info h3 { margin: 0 0 20px 0; font-size: 2.2rem; color: #fff; }
         
-        /* Enlace real de reproducción */
         .btn-play {
             display: inline-block;
             background: #e50914;
@@ -116,20 +124,22 @@
 </head>
 <body>
 
-    <h1 id="app-title">ClassicoFilm TV</h1>
-    <h2 id="estado-titulo">Cargando catálogo premium...</h2>
+    <div class="logo-container">
+        <img src="https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEizwX_7B0q1k9wWby47_Fz_Hq2m9B9A6q1S6Vb8m7Zg9H/s1600/logo.png" alt="ClassicoFilm TV" onerror="this.style.display='none'; document.getElementById('alt-title').style.display='block';">
+        <h1 id="alt-title" style="display:none; color:#e50914; margin:0;">ClassicoFilm TV</h1>
+    </div>
+    
+    <h2 id="estado-titulo">Cargando catálogo de películas...</h2>
     
     <div class="tv-grid-wrapper">
         <div class="tv-grid" id="catalogo-tv"></div>
     </div>
 
-    <!-- Ficha Intermedia -->
     <div id="detalles-modal">
         <div class="modal-contenido">
             <img id="modal-img" src="">
             <div class="modal-info">
                 <h3 id="modal-titulo">Título</h3>
-                <!-- Ahora es un enlace real href que la tele entiende perfectamente -->
                 <a id="btn-reproducir-modal" class="btn-play" href="#">▶ REPRODUCIR</a>
             </div>
         </div>
@@ -165,7 +175,6 @@
                     if (urlDzen.startsWith('//')) urlDzen = 'https:' + urlDzen;
                 }
 
-                // Usamos etiquetas <a> con href e indexación para obligar a la tele a hacerles caso nativamente
                 const tarjeta = document.createElement('a');
                 tarjeta.href = "#";
                 tarjeta.className = 'movie-card';
@@ -183,9 +192,7 @@
             document.getElementById('estado-titulo').innerText = `Catálogo de Cine Clásico (${totalPeliculas} películas)`;
             
             if (peliculasElementos.length > 0 && indiceEnFoco === 0) {
-                // TRUCO MAESTRO: Forzamos el foco real del navegador repitiéndolo para asegurar que "despierte" el mando
                 setTimeout(actualizarFoco, 300);
-                setTimeout(actualizarFoco, 800);
             }
         }
 
@@ -197,7 +204,7 @@
             if (peliculasElementos[indiceEnFoco]) {
                 const elementoDestino = peliculasElementos[indiceEnFoco];
                 elementoDestino.classList.add('focused');
-                elementoDestino.focus(); // Obliga al navegador a mirar aquí
+                elementoDestino.focus();
 
                 const filaActual = Math.floor(indiceEnFoco / columnasFijas);
                 const contenedorGrid = document.getElementById('catalogo-tv');
@@ -211,7 +218,6 @@
             }
         }
 
-        // CONTROL DE MANDOS LG / WEBOS
         document.addEventListener('keydown', function(e) {
             const KEY_BACK_LG = 461; 
             const KEY_BACK_STANDARD = 8;
@@ -219,7 +225,6 @@
 
             if (estadoActual === "MODAL") {
                 if (e.key === "Enter" || e.keyCode === 13) {
-                    // Al pulsar OK en reproducir, redirigimos la pestaña entera al vídeo para que funcione nativo
                     const btnPlay = document.getElementById('btn-reproducir-modal');
                     window.location.href = btnPlay.href;
                 } else if (e.keyCode === KEY_BACK_LG || e.keyCode === KEY_BACK_STANDARD || e.keyCode === KEY_ESCAPE || e.key === "Backspace") {
@@ -262,7 +267,7 @@
             document.getElementById('modal-img').src = img;
             
             const btnPlay = document.getElementById('btn-reproducir-modal');
-            btnPlay.href = videoUrl; // Le inyectamos la URL directa
+            btnPlay.href = videoUrl;
             
             document.getElementById('detalles-modal').style.display = "flex";
             btnPlay.classList.add('focused');
@@ -294,11 +299,7 @@
             document.body.appendChild(s3);
         }
 
-        window.onload = function() {
-            lanzarCargaCompleta();
-            // Obligamos a la tele a poner el foco en el título nada más arrancar
-            document.getElementById('app-title').focus();
-        };
+        window.onload = lanzarCargaCompleta;
     </script>
 </body>
 </html>
