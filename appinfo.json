@@ -6,10 +6,5 @@
     "main": "index.html",
     "title": "Clasicofilm TV",
     "icon": "icon.png",
-    "largeIcon": "largeIcon.png",
-    "bgImage": "bgImage.png",
-    "requiredPermissions": [
-        "media.operation"
-    ],
     "handleKeyEvent": true
 }
