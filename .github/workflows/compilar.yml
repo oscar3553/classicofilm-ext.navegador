@@ -1,6 +1,8 @@
-name: Generar IPK de Clasicofilm TV
+name: Build webOS IPK
 
 on:
+  push:
+    branches: [ main ]
   workflow_dispatch:
 
 jobs:
@@ -8,40 +10,28 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    - name: Descargar el código del repositorio
+    - name: Checkout code
       uses: actions/checkout@v4
 
-    - name: Fabricar estructura nativa de LG webOS
+    - name: Set up Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '24'
+
+    - name: Install webOS CLI
+      run: npm install -g @webos-tools/cli
+
+    - name: Fix permissions for LG webOS
       run: |
-        # 1. Creamos la estructura interna que exige LG
-        mkdir -p ipk_folder/usr/palm/applications/com.clasicofilm.tv
-        
-        # 2. Copiamos tus 5 archivos dentro de la carpeta de la app
-        cp index.html ipk_folder/usr/palm/applications/com.clasicofilm.tv/
-        cp appinfo.json ipk_folder/usr/palm/applications/com.clasicofilm.tv/
-        cp icon.png ipk_folder/usr/palm/applications/com.clasicofilm.tv/
-        cp largeIcon.png ipk_folder/usr/palm/applications/com.clasicofilm.tv/
-        cp bgImage.png ipk_folder/usr/palm/applications/com.clasicofilm.tv/
-        
-        # 3. Creamos el archivo de control que identifica el paquete
-        mkdir -p ipk_folder/CONTROL
-        echo "Package: com.clasicofilm.tv" > ipk_folder/CONTROL/control
-        echo "Version: 1.0.0" >> ipk_folder/CONTROL/control
-        echo "Description: Aplicacion de cine clasico Clasicofilm TV" >> ipk_folder/CONTROL/control
-        echo "Architecture: all" >> ipk_folder/CONTROL/control
-        echo "Maintainer: Clasicofilm" >> ipk_folder/CONTROL/control
+        chmod -R 755 .
+        find . -type f -exec chmod 644 {} \;
 
-        # 4. Comprimimos los datos en el formato oficial de LG usando comandos nativos de Linux
-        cd ipk_folder
-        tar -czf control.tar.gz -C CONTROL control
-        tar -czf data.tar.gz -C usr palm
-        echo "2.0" > debian-binary
-        
-        # 5. Creamos el archivo .ipk final
-        ar rcs ../com.clasicofilm.tv_1.0.0_all.ipk debian-binary control.tar.gz data.tar.gz
+    - name: Package App
+      run: ares-package .
 
-    - name: Guardar el archivo .ipk generado
+    - name: Upload Artifact
       uses: actions/upload-artifact@v4
       with:
-        name: Clasicofilm-TV-Instalador
-        path: "*.ipk"
+        name: webos-package
+        path: |
+          *.ipk
