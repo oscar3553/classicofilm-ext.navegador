@@ -16,15 +16,12 @@ jobs:
     - name: Set up Node.js
       uses: actions/setup-node@v4
       with:
-        node-version: '24'
+        node-version: '18'
 
-    - name: Install webOS CLI
-      run: npm install -g @webos-tools/cli
-
-    - name: Fix permissions for LG webOS
+    - name: Install working webOS CLI
       run: |
-        chmod -R 755 .
-        find . -type f -exec chmod 644 {} \;
+        npm install -g npm@9
+        npm install -g @webos-tools/cli@2.4.0
 
     - name: Package App
       run: ares-package .
