@@ -16,12 +16,12 @@ jobs:
     - name: Set up Node.js
       uses: actions/setup-node@v4
       with:
-        node-version: '18'
+        node-version: '20'
 
-    - name: Install working webOS CLI
+    - name: Install webOS CLI and Fix Rimraf Error
       run: |
-        npm install -g npm@9
-        npm install -g @webos-tools/cli@2.4.0
+        npm install -g @webos-tools/cli
+        npm install -g rimraf
 
     - name: Package App
       run: ares-package .
