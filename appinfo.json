@@ -1,10 +1,11 @@
 {
     "id": "com.clasicofilm.tv",
     "version": "1.0.0",
-    "vendor": "Clasicofilm",
+    "vendor": "ClasicoFilm",
     "type": "web",
     "main": "index.html",
-    "title": "Clasicofilm TV",
+    "title": "ClasicoFilm TV",
     "icon": "icon.png",
-    "handleKeyEvent": true
+    "largeIcon": "largeicon.png",
+    "bgImage": "bgimage.png"
 }
