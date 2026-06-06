@@ -1,36 +1,6 @@
-name: Generar IPK de Clasicofilm TV
+name: Build webOS IPK
 
 on:
-  workflow_dispatch: # Esto nos permite pulsar un botón para compilar cuando queramos
-
-jobs:
-  build:
-    runs-on: ubuntu-latest
-
-    steps:
-    - name: Descargar el código del repositorio
-      uses: actions/checkout@v3
-
-    - name: Configurar Node.js
-      uses: actions/setup-node@v3
-      with:
-        node-size: 16
-
-    - name: Instalar herramientas CLI de LG webOS
-      run: npm install -g @webos-tools/cli
-
-    - name: Empaquetar la aplicación (.ipk)
-      run: ares-package .
-
-    - name: Guardar el archivo .ipk generado
-      uses: actions/upload-artifact@v4
-      with:
-        name: Clasicofilm-TV-Instalador
-        path: "*.ipk"ame: Build webOS IPK
-
-on:
-  push:
-    branches: [ main ]
   workflow_dispatch:
 
 jobs:
@@ -38,23 +8,22 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
+      - name: Checkout code
+        uses: actions/checkout@v4
 
-    - name: Set up Node.js
-      uses: actions/setup-node@v4
-      with:
-        node-version: '16'
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "18"
 
-    - name: Install Stable webOS CLI
-      run: npm install -g @webos-tools/cli@2.0.1-p1
+      - name: Install webOS CLI
+        run: npm install -g @webos-studio/cli
 
-    - name: Package App
-      run: ares-package .
+      - name: Package App
+        run: webos-package .
 
-    - name: Upload Artifact
-      uses: actions/upload-artifact@v4
-      with:
-        name: webos-package
-        path: |
-          *.ipk
+      - name: Upload IPK
+        uses: actions/upload-artifact@v4
+        with:
+          name: clasicofilm-tv-ipk
+          path: "*.ipk"
