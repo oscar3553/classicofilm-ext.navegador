@@ -5,31 +5,42 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Clasicofilm TV</title>
     <style>
+        /* Forzar resolución nativa de TV para evitar desbordamientos */
+        * { box-sizing: border-box; }
         body { 
-            background-color: #111; 
+            background-color: #0c0c0c; 
             color: #fff; 
             font-family: 'Segoe UI', Arial, sans-serif; 
             margin: 0; 
-            padding: 20px 30px; 
+            padding: 0; 
+            width: 1920px;
+            height: 1080px;
             overflow: hidden;
+            position: relative;
         }
         
-        /* Contenedor del Logotipo Oficial proporcionado */
-        .logo-container {
+        /* Encabezado fijo */
+        .header-tv {
+            height: 140px;
             text-align: center;
-            margin-bottom: 15px;
-            margin-top: 10px;
+            padding-top: 20px;
+            position: absolute;
+            top: 0; left: 0; width: 100%;
+            background: linear-gradient(to bottom, rgba(0,0,0,0.8), transparent);
+            z-index: 10;
         }
         .logo-container img {
-            max-height: 65px; /* Tamaño optimizado para que luzca espectacular en la TV */
+            max-height: 70px;
             width: auto;
         }
-
-        h2 { font-size: 1.3rem; margin: 0 0 25px 0; color: #aaa; text-align: center; }
+        h2 { font-size: 1.4rem; margin: 5px 0 0 0; color: #aaa; text-transform: uppercase; letter-spacing: 2px; }
         
+        /* Contenedor de la rejilla con margen superior para el header */
         .tv-grid-wrapper {
             width: 100%;
-            height: calc(100vh - 175px);
+            height: 940px;
+            margin-top: 140px;
+            padding: 20px 60px;
             overflow: hidden;
             position: relative;
         }
@@ -37,100 +48,133 @@
         .tv-grid { 
             display: grid; 
             grid-template-columns: repeat(6, 1fr); 
-            gap: 25px; 
-            transition: transform 0.15s ease-out; 
+            gap: 30px; 
+            transition: transform 0.3s ease-in-out; 
+            transform: translateY(0px);
         }
 
+        /* Tarjeta de Película Optimizada */
         .movie-card { 
-            background-color: #222; 
-            border-radius: 10px; 
+            background-color: #1a1a1a; 
+            border-radius: 8px; 
             overflow: hidden; 
-            border: 4px solid transparent; 
-            box-sizing: border-box;
+            border: 5px solid transparent; 
             display: block;
             text-decoration: none;
             color: white;
+            transition: transform 0.2s ease;
+            height: 380px;
         }
         
-        .movie-card:focus, .movie-card.focused { 
-            transform: scale(1.05); 
+        .movie-card.focused { 
+            transform: scale(1.06); 
             border-color: #e50914; 
-            box-shadow: 0 0 20px rgba(229, 9, 20, 0.8);
+            box-shadow: 0 0 25px rgba(229, 9, 20, 0.7);
             outline: none; 
         }
         .movie-card img { 
             width: 100%; 
-            height: 280px; 
+            height: 310px; 
             object-fit: cover; 
-            background-color: #333; 
+            background-color: #252525; 
         }
         .movie-card p { 
-            padding: 10px; 
+            padding: 10px 15px; 
             margin: 0; 
-            font-size: 1rem; 
+            font-size: 1.1rem; 
             font-weight: bold;
             white-space: nowrap; 
             overflow: hidden; 
             text-overflow: ellipsis; 
+            text-align: center;
         }
 
-        /* FICHA DE DETALLES (EL GADGET) */
+        /* FICHA DE DETALLES MODAL */
         #detalles-modal {
             display: none;
             position: fixed;
             top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0, 0, 0, 0.95);
+            background: rgba(0, 0, 0, 0.93);
             z-index: 5000;
             align-items: center;
             justify-content: center;
         }
         .modal-contenido {
-            background: #1c1c1c;
-            padding: 40px;
+            background: #141414;
+            padding: 50px;
             border-radius: 15px;
             display: flex;
-            gap: 40px;
-            max-width: 800px;
-            border: 3px solid #333;
+            gap: 50px;
+            width: 1000px;
+            border: 4px solid #282828;
             align-items: center;
+            box-shadow: 0 0 50px rgba(0,0,0,0.8);
         }
         .modal-contenido img {
-            width: 240px;
-            height: 340px;
+            width: 300px;
+            height: 430px;
             object-fit: cover;
-            border-radius: 8px;
+            border-radius: 10px;
+            box-shadow: 0 0 20px rgba(0,0,0,0.5);
         }
-        .modal-info h3 { margin: 0 0 20px 0; font-size: 2.2rem; color: #fff; }
+        .modal-info { flex: 1; }
+        .modal-info h3 { margin: 0 0 30px 0; font-size: 2.5rem; color: #fff; line-height: 1.2; }
         
         .btn-play {
             display: inline-block;
             background: #e50914;
             color: white;
-            border: 4px solid transparent;
-            padding: 15px 40px;
-            font-size: 1.4rem;
+            border: 5px solid transparent;
+            padding: 18px 50px;
+            font-size: 1.5rem;
             font-weight: bold;
             border-radius: 8px;
             text-decoration: none;
             cursor: pointer;
-            transition: all 0.2s;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.3);
         }
-        .btn-play:focus, .btn-play.focused {
+        .btn-play.focused {
             border-color: white;
-            transform: scale(1.08);
-            box-shadow: 0 0 15px #fff;
+            transform: scale(1.05);
+            box-shadow: 0 0 25px #fff;
             outline: none;
+        }
+
+        /* REPRODUCTOR DE VÍDEO EN PANTALLA COMPLETA (MODO CINE) */
+        #reproductor-pantalla-completa {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: #000;
+            z-index: 9999;
+        }
+        #reproductor-pantalla-completa video, #reproductor-pantalla-completa iframe {
+            width: 100%;
+            height: 100%;
+            border: none;
+        }
+        .aviso-mando {
+            position: absolute;
+            top: 30px; left: 30px;
+            background: rgba(0,0,0,0.7);
+            padding: 10px 20px;
+            border-radius: 20px;
+            font-size: 1rem;
+            color: #aaa;
+            z-index: 10000;
+            pointer-events: none;
         }
     </style>
 </head>
 <body>
 
-    <div class="logo-container">
-        <img src="https://blogger.googleusercontent.com/img/a/AVvXsEgpLF6ROFXXw42soEaNVYLsA7ZPqgnzhGWN-id-bGZ0GfPbfeO08bxXlPv6KgdiOPMAOrsjOu8V-WXIUhlTYRYlU6KQthnIL0VcP1-D1l7CJImrszfdjCImWIMOMgoBYl5MwPot7B7SeRqyx3TzBUP2q1AXRgr_hS1zlGMPnh4VEMTvEz9Lq0f1AytDFWog=s158" alt="Clasicofilm TV" onerror="this.style.display='none'; document.getElementById('alt-title').style.display='block';">
-        <h1 id="alt-title" style="display:none; color:#e50914; margin:0;">Clasicofilm TV</h1>
+    <div class="header-tv">
+        <div class="logo-container">
+            <img src="https://blogger.googleusercontent.com/img/a/AVvXsEgpLF6ROFXXw42soEaNVYLsA7ZPqgnzhGWN-id-bGZ0GfPbfeO08bxXlPv6KgdiOPMAOrsjOu8V-WXIUhlTYRYlU6KQthnIL0VcP1-D1l7CJImrszfdjCImWIMOMgoBYl5MwPot7B7SeRqyx3TzBUP2q1AXRgr_hS1zlGMPnh4VEMTvEz9Lq0f1AytDFWog=s158" alt="Clasicofilm TV" onerror="this.style.display='none'; document.getElementById('alt-title').style.display='block';">
+            <h1 id="alt-title" style="display:none; color:#e50914; margin:0;">Clasicofilm TV</h1>
+        </div>
+        <h2 id="estado-titulo">Cargando catálogo de películas...</h2>
     </div>
-    
-    <h2 id="estado-titulo">Cargando catálogo de películas...</h2>
     
     <div class="tv-grid-wrapper">
         <div class="tv-grid" id="catalogo-tv"></div>
@@ -141,9 +185,14 @@
             <img id="modal-img" src="">
             <div class="modal-info">
                 <h3 id="modal-titulo">Título</h3>
-                <a id="btn-reproducir-modal" class="btn-play" href="#">▶ REPRODUCIR</a>
+                <a id="btn-reproducir-modal" class="btn-play" href="#">▶ REPRODUCIR PELÍCULA</a>
             </div>
         </div>
+    </div>
+
+    <div id="reproductor-pantalla-completa">
+        <div class="aviso-mando">Pulsa ATRÁS (Back) en el mando para volver al catálogo</div>
+        <div id="video-container-tv" style="width:100%; height:100%;"></div>
     </div>
 
     <script>
@@ -153,6 +202,7 @@
         let peliculasElementos = [];
         let estadoActual = "CATALOGO"; 
         const columnasFijas = 6;
+        const altoFilaEstimado = 410; // Alto de tarjeta (380) + gap (30)
 
         function agregarPeliculasAlCatalogo(entradas) {
             const contenedor = document.getElementById('catalogo-tv');
@@ -169,19 +219,20 @@
                 }
 
                 const contenidoPost = entrada.content ? entrada.content.$t : "";
-                let urlDzen = "";
+                let urlVideo = "";
+                
+                // Extraer el enlace del iframe original (Dzen/Yandex)
                 const coincidencia = contenidoPost.match(/<iframe[^>]+src="([^">]+)"/);
                 if (coincidencia && coincidencia[1]) {
-                    urlDzen = coincidencia[1];
-                    if (urlDzen.startsWith('//')) urlDzen = 'https:' + urlDzen;
+                    urlVideo = coincidencia[1];
+                    if (urlVideo.startsWith('//')) urlVideo = 'https:' + urlVideo;
                 }
 
                 const tarjeta = document.createElement('a');
                 tarjeta.href = "#";
                 tarjeta.className = 'movie-card';
-                tarjeta.setAttribute('tabindex', '0');
                 tarjeta.innerHTML = `<img src="${imagenUrl}"><p>${titulo}</p>`;
-                tarjeta.dataset.video = urlDzen;
+                tarjeta.dataset.video = urlVideo;
                 tarjeta.dataset.title = titulo;
                 tarjeta.dataset.img = imagenUrl;
 
@@ -190,7 +241,7 @@
                 totalPeliculas++;
             });
 
-            document.getElementById('estado-titulo').innerText = `Catálogo de Cine Clásico (${totalPeliculas} películas)`;
+            document.getElementById('estado-titulo').innerText = `Catálogo (${totalPeliculas} películas)`;
             
             if (peliculasElementos.length > 0 && indiceEnFoco === 0) {
                 setTimeout(actualizarFoco, 300);
@@ -205,13 +256,13 @@
             if (peliculasElementos[indiceEnFoco]) {
                 const elementoDestino = peliculasElementos[indiceEnFoco];
                 elementoDestino.classList.add('focused');
-                elementoDestino.focus();
 
+                // Desplazamiento inteligente de la rejilla
                 const filaActual = Math.floor(indiceEnFoco / columnasFijas);
                 const contenedorGrid = document.getElementById('catalogo-tv');
                 
                 if (filaActual > 1) {
-                    const desplazar = (filaActual - 1) * 360;
+                    const desplazar = (filaActual - 1) * altoFilaEstimado;
                     contenedorGrid.style.transform = `translateY(-${desplazar}px)`;
                 } else {
                     contenedorGrid.style.transform = `translateY(0px)`;
@@ -219,40 +270,63 @@
             }
         }
 
+        // CONTROLADOR NATIVO DEL MANDO DE LG WEBOS (Códigos Numéricos)
         document.addEventListener('keydown', function(e) {
-            const KEY_BACK_LG = 461; 
-            const KEY_BACK_STANDARD = 8;
-            const KEY_ESCAPE = 27;
+            // Mapeo universal de botones físicos de mandos Smart TV
+            const code = e.keyCode || e.which;
+            
+            const KEY_LEFT = 37;
+            const KEY_UP = 38;
+            const KEY_RIGHT = 39;
+            const KEY_DOWN = 40;
+            const KEY_ENTER = 13;
+            
+            // Códigos del botón volver/atrás físicos de mandos LG webOS
+            const KEY_LG_BACK = 461;
+            const KEY_STANDARD_BACK = 8;
+            const KEY_ESC = 27;
 
+            // 1. COMPORTAMIENTO EN MODO REPRODUCTOR (CINE)
+            if (estadoActual === "REPRODUCTOR") {
+                if (code === KEY_LG_BACK || code === KEY_STANDARD_BACK || code === KEY_ESC) {
+                    e.preventDefault();
+                    cerrarReproductor();
+                }
+                return;
+            }
+
+            // 2. COMPORTAMIENTO EN MODO MODAL (FICHA DETALLES)
             if (estadoActual === "MODAL") {
-                if (e.key === "Enter" || e.keyCode === 13) {
-                    const btnPlay = document.getElementById('btn-reproducir-modal');
-                    window.location.href = btnPlay.href;
-                } else if (e.keyCode === KEY_BACK_LG || e.keyCode === KEY_BACK_STANDARD || e.keyCode === KEY_ESCAPE || e.key === "Backspace") {
+                if (code === KEY_ENTER) {
+                    e.preventDefault();
+                    const urlVideo = document.getElementById('btn-reproducir-modal').dataset.videoUrl;
+                    lanzarCinePantallaCompleta(urlVideo);
+                } else if (code === KEY_LG_BACK || code === KEY_STANDARD_BACK || code === KEY_ESC) {
                     e.preventDefault();
                     cerrarModal();
                 }
                 return;
             }
 
-            switch(e.key) {
-                case "ArrowLeft":
+            // 3. COMPORTAMIENTO EN EL CATÁLOGO PRINCIPAL
+            switch(code) {
+                case KEY_LEFT:
                     e.preventDefault();
                     if (indiceEnFoco > 0) { indiceEnFoco--; actualizarFoco(); }
                     break;
-                case "ArrowRight":
+                case KEY_RIGHT:
                     e.preventDefault();
                     if (indiceEnFoco < peliculasElementos.length - 1) { indiceEnFoco++; actualizarFoco(); }
                     break;
-                case "ArrowUp":
+                case KEY_UP:
                     e.preventDefault();
                     if (indiceEnFoco - columnasFijas >= 0) { indiceEnFoco -= columnasFijas; actualizarFoco(); }
                     break;
-                case "ArrowDown":
+                case KEY_DOWN:
                     e.preventDefault();
                     if (indiceEnFoco + columnasFijas < peliculasElementos.length) { indiceEnFoco += columnasFijas; actualizarFoco(); }
                     break;
-                case "Enter":
+                case KEY_ENTER:
                     e.preventDefault();
                     const tarjeta = peliculasElementos[indiceEnFoco];
                     if (tarjeta) {
@@ -268,11 +342,10 @@
             document.getElementById('modal-img').src = img;
             
             const btnPlay = document.getElementById('btn-reproducir-modal');
-            btnPlay.href = videoUrl;
+            btnPlay.dataset.videoUrl = videoUrl; // Guardamos la url de forma segura
             
             document.getElementById('detalles-modal').style.display = "flex";
             btnPlay.classList.add('focused');
-            btnPlay.focus();
         }
 
         function cerrarModal() {
@@ -282,6 +355,41 @@
             actualizarFoco();
         }
 
+        // NUEVO REPRODUCTOR INTERNO PROTEGIDO EN PANTALLA COMPLETA
+        function lanzarCinePantallaCompleta(url) {
+            if (!url) {
+                alert("Esta película no dispone de un enlace de vídeo válido en este momento.");
+                return;
+            }
+            
+            estadoActual = "REPRODUCTOR";
+            const contenedorVideo = document.getElementById('video-container-tv');
+            contenedorVideo.innerHTML = ""; // Limpiar reproducciones previas
+
+            // Si el archivo es un enlace de vídeo directo mp4/mkv, usamos el reproductor nativo ultra-rápido de LG
+            if (url.includes('.mp4') || url.includes('.mkv') || url.includes('.m3u8')) {
+                contenedorVideo.innerHTML = `
+                    <video id="player-lg-nativo" autoplay controls width="100%" height="100%">
+                        <source src="${url}" type="video/mp4">
+                    </video>
+                `;
+            } else {
+                // Si es un enlace de Dzen, incrustamos el iframe de forma nativa e interna bajo pantalla completa controlada
+                contenedorVideo.innerHTML = `
+                    <iframe id="player-lg-iframe" src="${url}" allow="autoplay; fullscreen" allowfullscreen></iframe>
+                `;
+            }
+
+            document.getElementById('reproductor-pantalla-completa').style.display = "block";
+        }
+
+        function cerrarReproductor() {
+            estadoActual = "MODAL";
+            document.getElementById('reproductor-pantalla-completa').style.display = "none";
+            document.getElementById('video-container-tv').innerHTML = ""; // Detener el audio/video inmediatamente
+        }
+
+        // Recepción de bloques desde Blogger
         function bloqueNuevas(datos) { agregarPeliculasAlCatalogo(datos.feed.entry); }
         function bloqueMedio(datos) { agregarPeliculasAlCatalogo(datos.feed.entry); }
         function bloqueAntiguas(datos) { agregarPeliculasAlCatalogo(datos.feed.entry); }
