@@ -1,0 +1,24 @@
+{
+  "manifest_version": 3,
+  "name": "ClasicoFilm TV Extensión",
+  "version": "1.0.0",
+  "description": "Tu catálogo de cine clásico directamente en el navegador.",
+  "permissions": [
+    "storage"
+  ],
+  "host_permissions": [
+    "https://www.classicofilm.com/*"
+  ],
+  "action": {
+    "default_popup": "index.html",
+    "default_icon": "icon.png"
+  },
+  "icons": {
+    "16": "icon.png",
+    "48": "icon.png",
+    "128": "largeicon.png"
+  },
+  "content_security_policy": {
+    "extension_pages": "script-src 'self' 'unsafe-inline'; object-src 'self';"
+  }
+}
