@@ -6,47 +6,94 @@
     <title>Clasicofilm TV - Extensión</title>
     <style>
         * { box-sizing: border-box; }
-       body { 
+        body { 
             background-color: #0c0c0c; 
             color: #fff; 
             font-family: 'Segoe UI', Arial, sans-serif; 
             margin: 0; 
             padding: 0; 
-            width: 100%; /* Ahora ocupa todo el ancho de la pantalla */
+            width: 100%; 
             min-height: 100vh;
             overflow-y: auto;
             position: relative;
         }
         
-        /* Encabezado */
+        /* Encabezado expandido para buscador y filtros */
         .header-tv {
-            height: 100px;
             text-align: center;
-            padding-top: 15px;
+            padding: 15px 20px;
             position: sticky;
             top: 0; left: 0; width: 100%;
-            background: linear-gradient(to bottom, rgba(12,12,12,1), rgba(12,12,12,0.85), transparent);
+            background: rgba(12, 12, 12, 0.95);
+            backdrop-filter: blur(10px);
             z-index: 10;
+            border-bottom: 1px solid #222;
         }
         .logo-container img {
             max-height: 50px;
             width: auto;
         }
-        h2 { font-size: 1rem; margin: 3px 0 0 0; color: #aaa; text-transform: uppercase; letter-spacing: 2px; }
+        h2 { font-size: 1rem; margin: 3px 0 10px 0; color: #aaa; text-transform: uppercase; letter-spacing: 2px; }
+        
+        /* Controles de Búsqueda y Filtros */
+        .controles-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 12px;
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        .caja-busqueda {
+            width: 100%;
+            max-width: 400px;
+            padding: 10px 15px;
+            font-size: 1rem;
+            background-color: #1a1a1a;
+            border: 2px solid #333;
+            border-radius: 25px;
+            color: white;
+            outline: none;
+            transition: border-color 0.3s ease;
+        }
+        .caja-busqueda:focus {
+            border-color: #e50914;
+        }
+        .contenedor-generos {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 8px;
+            width: 100%;
+        }
+        .btn-genero {
+            background-color: #222;
+            color: #ccc;
+            border: 1px solid #444;
+            padding: 6px 14px;
+            font-size: 0.85rem;
+            border-radius: 15px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        .btn-genero:hover, .btn-genero.activo {
+            background-color: #e50914;
+            color: white;
+            border-color: #e50914;
+        }
         
         /* Contenedor adaptativo */
         .tv-grid-wrapper {
             width: 100%;
-            padding: 10px 20px 30px 20px;
+            padding: 20px;
         }
-
-       .tv-grid { 
+        .tv-grid { 
             display: grid; 
-            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); /* Columnas responsivas automáticas */
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); 
             gap: 20px; 
         }
 
-        /* Tarjetas optimizadas para PC */
+        /* Tarjetas optimizadas */
         .movie-card { 
             background-color: #1a1a1a; 
             border-radius: 6px; 
@@ -59,8 +106,7 @@
             height: 240px;
             cursor: pointer;
         }
-        
-        .movie-card:hover, .movie-card.focused { 
+        .movie-card:hover { 
             transform: scale(1.04); 
             border-color: #e50914; 
             box-shadow: 0 0 15px rgba(229, 9, 20, 0.5);
@@ -83,7 +129,7 @@
             text-align: center;
         }
 
-        /* REPRODUCTOR PANTALLA COMPLETA EN NAVEGADOR */
+        /* REPRODUCTOR PANTALLA COMPLETA */
         #reproductor-pantalla-completa {
             display: none;
             position: fixed;
@@ -122,6 +168,14 @@
             <h1 id="alt-title" style="display:none; color:#e50914; margin:0; font-size: 1.5rem;">Clasicofilm TV</h1>
         </div>
         <h2 id="estado-titulo">Cargando películas clásicas...</h2>
+        
+        <!-- Nuevos controles incorporados -->
+        <div class="controles-container">
+            <input type="text" id="buscador-cine" class="caja-busqueda" placeholder="Buscar película por título...">
+            <div id="lista-generos" class="contenedor-generos">
+                <!-- Los botones de géneros se inyectarán dinámicamente aquí -->
+            </div>
+        </div>
     </div>
     
     <div class="tv-grid-wrapper">
