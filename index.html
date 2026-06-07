@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Clasicofilm TV</title>
+    <title>Clasicofilm TV - Extensión</title>
     <style>
         * { box-sizing: border-box; }
         body { 
@@ -12,75 +12,70 @@
             font-family: 'Segoe UI', Arial, sans-serif; 
             margin: 0; 
             padding: 0; 
-            width: 1920px;
-            height: 1080px;
-            overflow: hidden;
+            width: 800px; /* Tamaño ideal para el desplegable de la extensión */
+            height: 600px;
+            overflow-y: auto;
             position: relative;
         }
         
-        /* Encabezado fijo */
+        /* Encabezado */
         .header-tv {
-            height: 140px;
+            height: 100px;
             text-align: center;
-            padding-top: 20px;
-            position: absolute;
+            padding-top: 15px;
+            position: sticky;
             top: 0; left: 0; width: 100%;
-            background: linear-gradient(to bottom, rgba(0,0,0,0.8), transparent);
+            background: linear-gradient(to bottom, rgba(12,12,12,1), rgba(12,12,12,0.85), transparent);
             z-index: 10;
         }
         .logo-container img {
-            max-height: 70px;
+            max-height: 50px;
             width: auto;
         }
-        h2 { font-size: 1.4rem; margin: 5px 0 0 0; color: #aaa; text-transform: uppercase; letter-spacing: 2px; }
+        h2 { font-size: 1rem; margin: 3px 0 0 0; color: #aaa; text-transform: uppercase; letter-spacing: 2px; }
         
-        /* Contenedor de la rejilla con los tamaños compactos sugeridos */
+        /* Contenedor adaptativo */
         .tv-grid-wrapper {
             width: 100%;
-            height: 940px;
-            margin-top: 140px;
-            padding: 20px 60px;
-            overflow: hidden;
-            position: relative;
+            padding: 10px 20px 30px 20px;
         }
 
         .tv-grid { 
             display: grid; 
-            grid-template-columns: repeat(6, 1fr); 
-            gap: 25px; 
-            transition: transform 0.3s ease-in-out; 
-            transform: translateY(0px);
+            grid-template-columns: repeat(4, 1fr); /* 4 columnas fijas en el popup */
+            gap: 15px; 
         }
 
-        /* Tarjetas más pequeñas (Sugerencia ChatGPT para estilo Netflix) */
+        /* Tarjetas optimizadas para PC */
         .movie-card { 
             background-color: #1a1a1a; 
-            border-radius: 8px; 
+            border-radius: 6px; 
             overflow: hidden; 
-            border: 5px solid transparent; 
+            border: 3px solid transparent; 
             display: block;
             text-decoration: none;
             color: white;
-            transition: transform 0.2s ease;
-            height: 300px; /* Reducido de 380px */
+            transition: transform 0.2s ease, border-color 0.2s ease;
+            height: 240px;
+            cursor: pointer;
         }
         
-        .movie-card.focused { 
-            transform: scale(1.06); 
+        .movie-card:hover, .movie-card.focused { 
+            transform: scale(1.04); 
             border-color: #e50914; 
-            box-shadow: 0 0 25px rgba(229, 9, 20, 0.7);
+            box-shadow: 0 0 15px rgba(229, 9, 20, 0.5);
             outline: none; 
         }
         .movie-card img { 
             width: 100%; 
-            height: 240px; /* Reducido de 310px */
+            height: 190px; 
             object-fit: cover; 
             background-color: #252525; 
         }
         .movie-card p { 
-            padding: 8px 10px; 
+            padding: 5px; 
             margin: 0; 
-            font-size: 1rem; 
+            font-size: 0.85rem; 
             font-weight: bold;
             white-space: nowrap; 
             overflow: hidden; 
@@ -88,7 +83,7 @@
             text-align: center;
         }
 
-        /* REPRODUCTOR DE VÍDEO EN PANTALLA COMPLETA INTEGRADO */
+        /* REPRODUCTOR PANTALLA COMPLETA EN NAVEGADOR */
         #reproductor-pantalla-completa {
             display: none;
             position: fixed;
@@ -96,23 +91,26 @@
             background: #000;
             z-index: 9999;
         }
-        #reproductor-pantalla-completa video, #reproductor-pantalla-completa iframe {
+        #reproductor-pantalla-completa iframe {
             width: 100%;
             height: 100%;
             border: none;
         }
-        .aviso-mando {
+        .btn-cerrar {
             position: absolute;
-            top: 30px; left: 30px;
-            background: rgba(0,0,0,0.8);
-            padding: 12px 25px;
-            border-radius: 20px;
-            font-size: 1.1rem;
-            color: #fff;
-            z-index: 10000;
-            pointer-events: none;
+            top: 20px; right: 20px;
+            background: #e50914;
+            color: white;
+            border: none;
+            padding: 10px 15px;
             font-weight: bold;
-            border: 1px solid #333;
+            border-radius: 4px;
+            cursor: pointer;
+            z-index: 10000;
+            box-shadow: 0 0 10px rgba(0,0,0,0.5);
+        }
+        .btn-cerrar:hover {
+            background: #b80710;
         }
     </style>
 </head>
@@ -121,9 +119,9 @@
     <div class="header-tv">
         <div class="logo-container">
             <img src="https://blogger.googleusercontent.com/img/a/AVvXsEgpLF6ROFXXw42soEaNVYLsA7ZPqgnzhGWN-id-bGZ0GfPbfeO08bxXlPv6KgdiOPMAOrsjOu8V-WXIUhlTYRYlU6KQthnIL0VcP1-D1l7CJImrszfdjCImWIMOMgoBYl5MwPot7B7SeRqyx3TzBUP2q1AXRgr_hS1zlGMPnh4VEMTvEz9Lq0f1AytDFWog=s158" alt="Clasicofilm TV" onerror="this.style.display='none'; document.getElementById('alt-title').style.display='block';">
-            <h1 id="alt-title" style="display:none; color:#e50914; margin:0;">Clasicofilm TV</h1>
+            <h1 id="alt-title" style="display:none; color:#e50914; margin:0; font-size: 1.5rem;">Clasicofilm TV</h1>
         </div>
-        <h2 id="estado-titulo">Cargando catálogo de películas...</h2>
+        <h2 id="estado-titulo">Cargando películas clásicas...</h2>
     </div>
     
     <div class="tv-grid-wrapper">
@@ -131,185 +129,10 @@
     </div>
 
     <div id="reproductor-pantalla-completa">
-        <div class="aviso-mando">Pulsa ATRÁS (Back) en el mando para volver al catálogo</div>
+        <button class="btn-cerrar" id="close-player-btn">✕ Volver al Catálogo</button>
         <div id="video-container-tv" style="width:100%; height:100%;"></div>
     </div>
 
-    <script>
-        let totalPeliculas = 0;
-        const titulosRegistrados = new Set();
-        let indiceEnFoco = 0;
-        let peliculasElementos = [];
-        let estadoActual = "CATALOGO"; 
-        const columnasFijas = 6;
-        const altoFilaEstimado = 325; // Adaptado al nuevo tamaño compacto (300 + 25 gap)
-
-        function agregarPeliculasAlCatalogo(entradas) {
-            const contenedor = document.getElementById('catalogo-tv');
-            if (!entradas) return;
-
-            entradas.forEach((entrada) => {
-                const titulo = entrada.title.$t;
-                if (titulosRegistrados.has(titulo)) return;
-                titulosRegistrados.add(titulo);
-
-                let imagenUrl = "https://via.placeholder.com/200x280?text=Cine";
-                if (entrada.media$thumbnail) {
-                    imagenUrl = entrada.media$thumbnail.url.replace('/s72-c/', '/s1600/');
-                }
-
-                const contenidoPost = entrada.content ? entrada.content.$t : "";
-                let urlVideo = "";
-                
-                const coincidencia = contenidoPost.match(/<iframe[^>]+src="([^">]+)"/);
-                if (coincidencia && coincidencia[1]) {
-                    urlVideo = coincidencia[1];
-                    if (urlVideo.startsWith('//')) urlVideo = 'https:' + urlVideo;
-                }
-
-                const tarjeta = document.createElement('a');
-                tarjeta.href = "#";
-                tarjeta.className = 'movie-card';
-                tarjeta.innerHTML = `<img src="${imagenUrl}"><p>${titulo}</p>`;
-                tarjeta.dataset.video = urlVideo;
-                tarjeta.dataset.title = titulo;
-                tarjeta.dataset.img = imagenUrl;
-
-                contenedor.appendChild(tarjeta);
-                peliculasElementos.push(tarjeta);
-                totalPeliculas++;
-            });
-
-            document.getElementById('estado-titulo').innerText = `Catálogo (${totalPeliculas} películas)`;
-            
-            if (peliculasElementos.length > 0 && indiceEnFoco === 0) {
-                setTimeout(actualizarFoco, 300);
-            }
-        }
-
-        function actualizarFoco() {
-            if (estadoActual !== "CATALOGO") return;
-
-            peliculasElementos.forEach(el => el.classList.remove('focused'));
-            
-            if (peliculasElementos[indiceEnFoco]) {
-                const elementoDestino = peliculasElementos[indiceEnFoco];
-                elementoDestino.classList.add('focused');
-
-                const filaActual = Math.floor(indiceEnFoco / columnasFijas);
-                const contenedorGrid = document.getElementById('catalogo-tv');
-                
-                if (filaActual > 1) {
-                    const desplazar = (filaActual - 1) * altoFilaEstimado;
-                    contenedorGrid.style.transform = `translateY(-${desplazar}px)`;
-                } else {
-                    contenedorGrid.style.transform = `translateY(0px)`;
-                }
-            }
-        }
-
-        // CONTROLADOR DEL MANDO A DISTANCIA LG WEBOS
-        document.addEventListener('keydown', function(e) {
-            const code = e.keyCode || e.which;
-            
-            const KEY_LEFT = 37;
-            const KEY_UP = 38;
-            const KEY_RIGHT = 39;
-            const KEY_DOWN = 40;
-            const KEY_ENTER = 13;
-            
-            const KEY_LG_BACK = 461;
-            const KEY_STANDARD_BACK = 8;
-            const KEY_ESC = 27;
-
-            // Si estamos reproduciendo, el botón ATRÁS detiene el vídeo y vuelve al menú
-            if (estadoActual === "REPRODUCTOR") {
-                if (code === KEY_LG_BACK || code === KEY_STANDARD_BACK || code === KEY_ESC) {
-                    e.preventDefault();
-                    cerrarReproductor();
-                }
-                return;
-            }
-
-            // Movimiento por el catálogo
-            switch(code) {
-                case KEY_LEFT:
-                    e.preventDefault();
-                    if (indiceEnFoco > 0) { indiceEnFoco--; actualizarFoco(); }
-                    break;
-                case KEY_RIGHT:
-                    e.preventDefault();
-                    if (indiceEnFoco < peliculasElementos.length - 1) { indiceEnFoco++; actualizarFoco(); }
-                    break;
-                case KEY_UP:
-                    e.preventDefault();
-                    if (indiceEnFoco - columnasFijas >= 0) { indiceEnFoco -= columnasFijas; actualizarFoco(); }
-                    break;
-                case KEY_DOWN:
-                    e.preventDefault();
-                    if (indiceEnFoco + columnasFijas < peliculasElementos.length) { indiceEnFoco += columnasFijas; actualizarFoco(); }
-                    break;
-                case KEY_ENTER:
-                    e.preventDefault();
-                    const tarjeta = peliculasElementos[indiceEnFoco];
-                    if (tarjeta && tarjeta.dataset.video) {
-                        // Flujo directo de ChatGPT: Catálogo -> OK -> Reproducir
-                        lanzarCinePantallaCompleta(tarjeta.dataset.video);
-                    } else {
-                        alert("Esta película no tiene un enlace de vídeo reproducible.");
-                    }
-                    break;
-            }
-        });
-
-        // REPRODUCTOR EN PANTALLA COMPLETA INTEGRADO (EVITA PANTALLA NEGRA EXTERIOR)
-        function lanzarCinePantallaCompleta(url) {
-            estadoActual = "REPRODUCTOR";
-            const contenedorVideo = document.getElementById('video-container-tv');
-            contenedorVideo.innerHTML = ""; 
-
-            if (url.includes('.mp4') || url.includes('.mkv') || url.includes('.m3u8')) {
-                contenedorVideo.innerHTML = `
-                    <video id="player-lg-nativo" autoplay controls width="100%" height="100%">
-                        <source src="${url}" type="video/mp4">
-                    </video>
-                `;
-            } else {
-                // Incrustación forzada interna segura para TV webOS
-                contenedorVideo.innerHTML = `
-                    <iframe id="player-lg-iframe" src="${url}" allow="autoplay; fullscreen" allowfullscreen></iframe>
-                `;
-            }
-
-            document.getElementById('reproductor-pantalla-completa').style.display = "block";
-        }
-
-        function cerrarReproductor() {
-            estadoActual = "CATALOGO";
-            document.getElementById('reproductor-pantalla-completa').style.display = "none";
-            document.getElementById('video-container-tv').innerHTML = ""; 
-            setTimeout(actualizarFoco, 100);
-        }
-
-        function bloqueNuevas(datos) { agregarPeliculasAlCatalogo(datos.feed.entry); }
-        function bloqueMedio(datos) { agregarPeliculasAlCatalogo(datos.feed.entry); }
-        function bloqueAntiguas(datos) { agregarPeliculasAlCatalogo(datos.feed.entry); }
-
-        function lanzarCargaCompleta() {
-            const s1 = document.createElement('script');
-            s1.src = "https://www.classicofilm.com/feeds/posts/default?alt=json-in-script&start-index=1&max-results=150&callback=bloqueNuevas";
-            document.body.appendChild(s1);
-
-            const s2 = document.createElement('script');
-            s2.src = "https://www.classicofilm.com/feeds/posts/default?alt=json-in-script&start-index=151&max-results=150&callback=bloqueMedio";
-            document.body.appendChild(s2);
-
-            const s3 = document.createElement('script');
-            s3.src = "https://www.classicofilm.com/feeds/posts/default?alt=json-in-script&start-index=301&max-results=150&callback=bloqueAntiguas";
-            document.body.appendChild(s3);
-        }
-
-        window.onload = lanzarCargaCompleta;
-    </script>
+    <script src="popup.js"></script>
 </body>
 </html>
