@@ -17,8 +17,5 @@
     "16": "icon.png",
     "48": "icon.png",
     "128": "largeicon.png"
-  },
-  "content_security_policy": {
-    "extension_pages": "script-src 'self' 'unsafe-inline'; object-src 'self';"
   }
 }
