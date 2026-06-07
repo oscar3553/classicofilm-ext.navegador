@@ -4,13 +4,15 @@
   "version": "1.0.0",
   "description": "Tu catálogo de cine clásico directamente en el navegador.",
   "permissions": [
-    "storage"
+    "tabs"
   ],
   "host_permissions": [
     "https://www.classicofilm.com/*"
   ],
+  "background": {
+    "service_worker": "background.js"
+  },
   "action": {
-    "default_popup": "index.html",
     "default_icon": "icon.png"
   },
   "icons": {
