@@ -64,7 +64,6 @@ function agregarPeliculasAlCatalogo(entradas) {
         contenedor.appendChild(tarjeta);
         totalPeliculas++;
 
-        // Corrección clave: Guardamos el objeto exacto en la lista global
         peliculasDatos.push({ 
             elemento: tarjeta, 
             titulo: titulo.toLowerCase(), 
@@ -78,6 +77,7 @@ function crearBotonesDeGeneros() {
     contenedorG.innerHTML = "";
     
     const botonTodos = document.createElement('button');
+    botonTodos.id = "btn-genero-todos"; // ID fijo para localizarlo al buscar
     botonTodos.className = "btn-genero activo";
     botonTodos.innerText = "Todas las películas";
     botonTodos.onclick = function() { filtrarPorGenero("TODOS", this); };
@@ -94,6 +94,10 @@ function crearBotonesDeGeneros() {
 
 function filtrarPorGenero(genero, botonSeleccionado) {
     generoActivo = genero;
+    // Si filtramos por género de forma manual, limpiamos el texto del buscador para evitar conflictos
+    if (genero !== "TODOS") {
+        document.getElementById('buscador-cine').value = "";
+    }
     document.querySelectorAll('.btn-genero').forEach(b => b.classList.remove('activo'));
     botonSeleccionado.classList.add('activo');
     aplicarFiltrosYBusqueda();
@@ -102,11 +106,18 @@ function filtrarPorGenero(genero, botonSeleccionado) {
 function aplicarFiltrosYBusqueda() {
     const textoBusqueda = document.getElementById('buscador-cine').value.toLowerCase().trim();
     
+    // MEJORA: Si el usuario escribe algo, forzamos que busque de forma global en todo el catálogo
+    if (textoBusqueda !== "" && generoActivo !== "TODOS") {
+        generoActivo = "TODOS";
+        document.querySelectorAll('.btn-genero').forEach(b => b.classList.remove('activo'));
+        const btnTodos = document.getElementById('btn-genero-todos');
+        if (btnTodos) btnTodos.classList.add('activo');
+    }
+
     peliculasDatos.forEach(peli => {
         const coincideBusqueda = peli.titulo.includes(textoBusqueda);
         const coincideGenero = (generoActivo === "TODOS" || peli.generos.includes(generoActivo));
 
-        // Forzar al navegador a redibujar el estado
         if (coincideBusqueda && coincideGenero) {
             peli.elemento.style.setProperty("display", "block", "important");
         } else {
@@ -115,7 +126,6 @@ function aplicarFiltrosYBusqueda() {
     });
 }
 
-// Vinculación directa del evento de teclado para la barra de búsqueda
 document.addEventListener('DOMContentLoaded', () => {
     const buscador = document.getElementById('buscador-cine');
     if(buscador) {
