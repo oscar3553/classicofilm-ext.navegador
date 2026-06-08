@@ -77,7 +77,7 @@ function crearBotonesDeGeneros() {
     contenedorG.innerHTML = "";
     
     const botonTodos = document.createElement('button');
-    botonTodos.id = "btn-genero-todos"; // ID fijo para localizarlo al buscar
+    botonTodos.id = "btn-genero-todos"; 
     botonTodos.className = "btn-genero activo";
     botonTodos.innerText = "Todas las películas";
     botonTodos.onclick = function() { filtrarPorGenero("TODOS", this); };
@@ -94,10 +94,10 @@ function crearBotonesDeGeneros() {
 
 function filtrarPorGenero(genero, botonSeleccionado) {
     generoActivo = genero;
-    // Si filtramos por género de forma manual, limpiamos el texto del buscador para evitar conflictos
-    if (genero !== "TODOS") {
-        document.getElementById('buscador-cine').value = "";
-    }
+    
+    // CORRECCIÓN: Si el usuario pulsa "Todas las películas" o cualquier género, vaciamos la barra de búsqueda automáticamente
+    document.getElementById('buscador-cine').value = "";
+    
     document.querySelectorAll('.btn-genero').forEach(b => b.classList.remove('activo'));
     botonSeleccionado.classList.add('activo');
     aplicarFiltrosYBusqueda();
@@ -106,7 +106,7 @@ function filtrarPorGenero(genero, botonSeleccionado) {
 function aplicarFiltrosYBusqueda() {
     const textoBusqueda = document.getElementById('buscador-cine').value.toLowerCase().trim();
     
-    // MEJORA: Si el usuario escribe algo, forzamos que busque de forma global en todo el catálogo
+    // Si el usuario escribe activamente en el buscador, pasamos el foco a la lista global de forma automática
     if (textoBusqueda !== "" && generoActivo !== "TODOS") {
         generoActivo = "TODOS";
         document.querySelectorAll('.btn-genero').forEach(b => b.classList.remove('activo'));
