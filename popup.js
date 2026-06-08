@@ -1,21 +1,18 @@
 let totalPeliculas = 0;
 const titulosRegistrados = new Set();
-let indiceEnFoco = 0;
-let peliculasElementos = [];
-let estadoActual = "CATALOGO"; 
+let peliculasDatos = []; // Para las búsquedas y filtros
+let todasLasEtiquetas = new Set();
+let generoActivo = "TODOS";
 
-// Cargar los bloques en orden secuencial estricto para evitar que se desordenen
 async function cargarTodoElCatalogo() {
     document.getElementById('estado-titulo').innerText = "Cargando películas recientes...";
     await cargarBloque(1);
-    
     document.getElementById('estado-titulo').innerText = "Cargando películas intermedias...";
     await cargarBloque(151);
-    
     document.getElementById('estado-titulo').innerText = "Cargando películas antiguas...";
     await cargarBloque(301);
-    
     document.getElementById('estado-titulo').innerText = `Catálogo (${totalPeliculas} películas)`;
+    crearBotonesDeGeneros();
 }
 
 async function cargarBloque(startIndex) {
@@ -24,12 +21,8 @@ async function cargarBloque(startIndex) {
         const response = await fetch(url);
         if (!response.ok) return;
         const data = await response.json();
-        if (data.feed && data.feed.entry) {
-            agregarPeliculasAlCatalogo(data.feed.entry);
-        }
-    } catch (error) {
-        console.error("Error cargando bloque: ", error);
-    }
+        if (data.feed && data.feed.entry) agregarPeliculasAlCatalogo(data.feed.entry);
+    } catch (e) { console.error("Error en bloque: ", e); }
 }
 
 function agregarPeliculasAlCatalogo(entradas) {
@@ -42,58 +35,97 @@ function agregarPeliculasAlCatalogo(entradas) {
         titulosRegistrados.add(titulo);
 
         let imagenUrl = "https://via.placeholder.com/200x280?text=Cine";
-        if (entry.media$thumbnail) {
-            imagenUrl = entry.media$thumbnail.url.replace('/s72-c/', '/s400/');
-        }
+        if (entry.media$thumbnail) imagenUrl = entry.media$thumbnail.url.replace('/s72-c/', '/s400/');
 
-        const contenidoPost = entry.content ? entry.content.$t : "";
         let urlVideo = "";
-        
+        const contenidoPost = entry.content ? entry.content.$t : "";
         const coincidencia = contenidoPost.match(/<iframe[^>]+src="([^">]+)"/);
         if (coincidencia && coincidencia[1]) {
-            urlVideo = coincidencia[1];
-            if (urlVideo.startsWith('//')) urlVideo = 'https:' + urlVideo;
+            urlVideo = coincidencia[1].startsWith('//') ? 'https:' + coincidencia[1] : coincidencia[1];
         }
+        if (!urlVideo) return;
 
-        if (!urlVideo) return; 
+        // Extraer categorías/géneros de Blogger
+        let generosPeli = [];
+        if (entry.category) {
+            generosPeli = entry.category.map(cat => cat.term.trim());
+            generosPeli.forEach(g => todasLasEtiquetas.add(g));
+        }
 
         const tarjeta = document.createElement('a');
         tarjeta.href = "#";
         tarjeta.className = 'movie-card';
         tarjeta.innerHTML = `<img src="${imagenUrl}" alt="${titulo}"><p>${titulo}</p>`;
-        tarjeta.dataset.video = urlVideo;
-
+        
         tarjeta.addEventListener('click', (e) => {
             e.preventDefault();
             lanzarCinePantallaCompleta(urlVideo);
         });
 
         contenedor.appendChild(tarjeta);
-        peliculasElementos.push(tarjeta);
         totalPeliculas++;
+
+        // Guardar referencia para buscar/filtrar luego
+        peliculasDatos.push({ elemento: tarjeta, titulo: titulo.toLowerCase(), generos: generosPeli });
     });
 }
 
-function lanzarCinePantallaCompleta(url) {
-    estadoActual = "REPRODUCTOR";
-    const contenedorVideo = document.getElementById('video-container-tv');
+function crearBotonesDeGeneros() {
+    const contenedorG = document.getElementById('lista-generos');
+    contenedorG.innerHTML = "";
     
+    const botonTodos = document.createElement('button');
+    botonTodos.className = "btn-genero activo";
+    botonTodos.innerText = "Todas las películas";
+    botonTodos.addEventListener('click', () => filtrarPorGenero("TODOS", botonTodos));
+    contenedorG.appendChild(botonTodos);
+
+    // Ordenar alfabéticamente las etiquetas encontradas
+    Array.from(todasLasEtiquetas).sort().forEach(genero => {
+        const btn = document.createElement('button');
+        btn.className = "btn-genero";
+        btn.innerText = genero;
+        btn.addEventListener('click', () => filtrarPorGenero(genero, btn));
+        contenedorG.appendChild(btn);
+    });
+}
+
+function filtrarPorGenero(genero, botonSeleccionado) {
+    generoActivo = genero;
+    document.querySelectorAll('.btn-genero').forEach(b => b.classList.remove('activo'));
+    botonSeleccionado.classList.add('activo');
+    aplicarFiltrosYBusqueda();
+}
+
+function aplicarFiltrosYBusqueda() {
+    const textoBusqueda = document.getElementById('buscador-cine').value.toLowerCase();
+    
+    peliculasDatos.forEach(peli => {
+        const cumpleBusqueda = peli.titulo.includes(textoBusqueda);
+        const cumpleGenero = (generoActivo === "TODOS" || peli.generos.includes(generoActivo));
+
+        if (cumpleBusqueda && cumpleGenero) {
+            peli.elemento.style.display = "block";
+        } else {
+            peli.elemento.style.display = "none";
+        }
+    });
+}
+
+// Escuchar la barra de búsqueda en tiempo real
+document.getElementById('buscador-cine').addEventListener('input', aplicarFiltrosYBusqueda);
+
+function lanzarCinePantallaCompleta(url) {
     document.body.style.overflow = "hidden";
-    contenedorVideo.innerHTML = `<iframe id="player-iframe" src="${url}" allow="autoplay; fullscreen" allowfullscreen></iframe>`;
+    document.getElementById('video-container-tv').innerHTML = `<iframe src="${url}" allow="autoplay; fullscreen" allowfullscreen></iframe>`;
     document.getElementById('reproductor-pantalla-completa').style.display = "block";
 }
 
 function cerrarReproductor() {
-    estadoActual = "CATALOGO";
     document.getElementById('reproductor-pantalla-completa').style.display = "none";
     document.getElementById('video-container-tv').innerHTML = ""; 
-    document.body.style.overflowY = "auto"; // Mantiene el tamaño completo de la pestaña
+    document.body.style.overflowY = "auto";
 }
 
-// Asignar evento al botón de cierre
 document.getElementById('close-player-btn').addEventListener('click', cerrarReproductor);
-
-// Ejecutar la carga ordenada al abrir
-window.onload = function() {
-    cargarTodoElCatalogo();
-};
+window.onload = () => { cargarTodoElCatalogo(); };
