@@ -1,6 +1,6 @@
 let totalPeliculas = 0;
 const titulosRegistrados = new Set();
-let peliculasDatos = []; // Para las búsquedas y filtros
+let peliculasDatos = []; 
 let todasLasEtiquetas = new Set();
 let generoActivo = "TODOS";
 
@@ -45,7 +45,6 @@ function agregarPeliculasAlCatalogo(entradas) {
         }
         if (!urlVideo) return;
 
-        // Extraer categorías/géneros de Blogger
         let generosPeli = [];
         if (entry.category) {
             generosPeli = entry.category.map(cat => cat.term.trim());
@@ -65,8 +64,12 @@ function agregarPeliculasAlCatalogo(entradas) {
         contenedor.appendChild(tarjeta);
         totalPeliculas++;
 
-        // Guardar referencia para buscar/filtrar luego
-        peliculasDatos.push({ elemento: tarjeta, titulo: titulo.toLowerCase(), generos: generosPeli });
+        // Corrección clave: Guardamos el objeto exacto en la lista global
+        peliculasDatos.push({ 
+            elemento: tarjeta, 
+            titulo: titulo.toLowerCase(), 
+            generos: generosPeli 
+        });
     });
 }
 
@@ -77,15 +80,14 @@ function crearBotonesDeGeneros() {
     const botonTodos = document.createElement('button');
     botonTodos.className = "btn-genero activo";
     botonTodos.innerText = "Todas las películas";
-    botonTodos.addEventListener('click', () => filtrarPorGenero("TODOS", botonTodos));
+    botonTodos.onclick = function() { filtrarPorGenero("TODOS", this); };
     contenedorG.appendChild(botonTodos);
 
-    // Ordenar alfabéticamente las etiquetas encontradas
     Array.from(todasLasEtiquetas).sort().forEach(genero => {
         const btn = document.createElement('button');
         btn.className = "btn-genero";
         btn.innerText = genero;
-        btn.addEventListener('click', () => filtrarPorGenero(genero, btn));
+        btn.onclick = function() { filtrarPorGenero(genero, this); };
         contenedorG.appendChild(btn);
     });
 }
@@ -98,22 +100,28 @@ function filtrarPorGenero(genero, botonSeleccionado) {
 }
 
 function aplicarFiltrosYBusqueda() {
-    const textoBusqueda = document.getElementById('buscador-cine').value.toLowerCase();
+    const textoBusqueda = document.getElementById('buscador-cine').value.toLowerCase().trim();
     
     peliculasDatos.forEach(peli => {
-        const cumpleBusqueda = peli.titulo.includes(textoBusqueda);
-        const cumpleGenero = (generoActivo === "TODOS" || peli.generos.includes(generoActivo));
+        const coincideBusqueda = peli.titulo.includes(textoBusqueda);
+        const coincideGenero = (generoActivo === "TODOS" || peli.generos.includes(generoActivo));
 
-        if (cumpleBusqueda && cumpleGenero) {
-            peli.elemento.style.display = "block";
+        // Forzar al navegador a redibujar el estado
+        if (coincideBusqueda && coincideGenero) {
+            peli.elemento.style.setProperty("display", "block", "important");
         } else {
-            peli.elemento.style.display = "none";
+            peli.elemento.style.setProperty("display", "none", "important");
         }
     });
 }
 
-// Escuchar la barra de búsqueda en tiempo real
-document.getElementById('buscador-cine').addEventListener('input', aplicarFiltrosYBusqueda);
+// Vinculación directa del evento de teclado para la barra de búsqueda
+document.addEventListener('DOMContentLoaded', () => {
+    const buscador = document.getElementById('buscador-cine');
+    if(buscador) {
+        buscador.addEventListener('input', aplicarFiltrosYBusqueda);
+    }
+});
 
 function lanzarCinePantallaCompleta(url) {
     document.body.style.overflow = "hidden";
