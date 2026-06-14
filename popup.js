@@ -4,10 +4,9 @@ let peliculasDatos = [];
 let todasLasEtiquetas = new Set();
 let generoActivo = "TODOS";
 
-// --- NUEVAS VARIABLES PARA PAGINACIÓN Y FILTRADO ---
-let peliculasFiltradas = []; // Guardará las películas que pasen los filtros actuales
+let peliculasFiltradas = []; 
 let paginaActual = 1;
-const peliculasPorPagina = 16; // Cantidad de entradas por página estilo APK
+const peliculasPorPagina = 16; 
 
 async function cargarTodoElCatalogo() {
     document.getElementById('estado-titulo').innerText = "Cargando películas recientes...";
@@ -21,7 +20,6 @@ async function cargarTodoElCatalogo() {
     
     crearBotonesDeGeneros();
     
-    // Al terminar de cargar, inicializamos la lista filtrada con todo el catálogo y renderizamos la pág 1
     peliculasFiltradas = [...peliculasDatos];
     actualizarPaginacion();
 }
@@ -47,13 +45,34 @@ function agregarPeliculasAlCatalogo(entradas) {
         let imagenUrl = "https://via.placeholder.com/200x280?text=Cine";
         if (entry.media$thumbnail) imagenUrl = entry.media$thumbnail.url.replace('/s72-c/', '/s400/');
 
-        let urlVideo = "";
+        // DETECTOR INTELIGENTE DE MÚLTIPLES SERVIDORES (Dzen vs Odysee)
+        let urlDzen = "";
+        let urlOdysee = "";
         const contenidoPost = entry.content ? entry.content.$t : "";
-        const coincidencia = contenidoPost.match(/<iframe[^>]+src="([^">]+)"/);
-        if (coincidencia && coincidencia[1]) {
-            urlVideo = coincidencia[1].startsWith('//') ? 'https:' + coincidencia[1] : coincidencia[1];
+        
+        // Buscamos todos los iframes del post
+        const matchesIframe = [...contenidoPost.matchAll(/<iframe[^>]+src="([^">]+)"/g)];
+        
+        if (matchesIframe.length > 0) {
+            matchesIframe.forEach(match => {
+                let urlEncontrada = match[1].startsWith('//') ? 'https:' + match[1] : match[1];
+                if (urlEncontrada.includes("dzen") || urlEncontrada.includes("yandex") || urlDzen === "") {
+                    if (!urlDzen) urlDzen = urlEncontrada;
+                }
+                if (urlEncontrada.includes("odysee") || urlEncontrada.includes("lbry")) {
+                    urlOdysee = urlEncontrada;
+                }
+            });
         }
-        if (!urlVideo) return;
+
+        // Si no se detectó nada mediante iframe, intentamos buscar enlaces directos en el contenido del post
+        if (!urlOdysee) {
+            const matchLinkOdysee = contenidoPost.match(/href="([^">]*odysee[^">]*)"/);
+            if (matchLinkOdysee) urlOdysee = matchLinkOdysee[1];
+        }
+
+        // Si no hay reproductor disponible de ningún tipo, saltamos la entrada
+        if (!urlDzen && !urlOdysee) return;
 
         let generosPeli = [];
         if (entry.category) {
@@ -61,37 +80,34 @@ function agregarPeliculasAlCatalogo(entradas) {
             generosPeli.forEach(g => todasLasEtiquetas.add(g));
         }
 
-        // Intentar extraer el año del título de forma automática (ej: "Sahara (1943)" -> 1943)
         let anioMatch = titulo.match(/\((\d{4})\)/);
         let anioPeli = anioMatch ? anioMatch[1] : "Clásico";
 
         totalPeliculas++;
 
-        // Guardamos los datos puros en el array en lugar de inyectar el elemento directamente
         peliculasDatos.push({ 
             titulo: titulo, 
             urlImagen: imagenUrl,
-            urlVideo: urlVideo,
+            urlDzen: urlDzen,
+            urlOdysee: urlOdysee,
             anio: anioPeli,
             generos: generosPeli 
         });
     });
 }
 
-// RENDERIZA EXCLUSIVAMENTE LAS PELÍCULAS DE LA PÁGINA ACTIVA
 function mostrarPaginaActual() {
     const contenedor = document.getElementById('catalogo-tv');
-    contenedor.innerHTML = ""; // Limpiamos la rejilla vieja
+    contenedor.innerHTML = ""; 
 
     if (peliculasFiltradas.length === 0) {
         contenedor.innerHTML = `<p style="grid-column: 1/-1; text-align: center; color: #888; padding: 40px;">No se encontraron películas.</p>`;
         return;
     }
 
-    // Calculamos el rango de cortes para la paginación
     const inicio = (paginaActual - 1) * peliculasPorPagina;
     const fin = inicio + peliculasPorPagina;
-    const pelisDeLaPagina = peliculasFiltradas.slice(inicio, fin);
+    const pelisDeLaPagina = pelisDeLaPagina = peliculasFiltradas.slice(inicio, fin);
 
     pelisDeLaPagina.forEach(peli => {
         const tarjeta = document.createElement('a');
@@ -99,7 +115,6 @@ function mostrarPaginaActual() {
         tarjeta.className = 'movie-card';
         tarjeta.innerHTML = `<img src="${peli.urlImagen}" alt="${peli.titulo}"><p>${peli.titulo}</p>`;
         
-        // Al hacer clic, en lugar de ir a pantalla completa, ABRE LA FICHA INTERMEDIA (Pop-up)
         tarjeta.addEventListener('click', (e) => {
             e.preventDefault();
             abrirFichaDetalle(peli);
@@ -109,11 +124,8 @@ function mostrarPaginaActual() {
     });
 }
 
-// ACTUALIZA LOS BOTONES DE ANTERIOR/SIGUIENTE Y EL CONTADOR DE PÁGINAS
 function actualizarPaginacion() {
     const totalPaginas = Math.ceil(peliculasFiltradas.length / peliculasPorPagina) || 1;
-    
-    // Si por filtros quedamos fuera de rango, reiniciamos a la página 1
     if (paginaActual > totalPaginas) paginaActual = 1;
 
     document.getElementById('pag-actual').innerText = paginaActual;
@@ -122,23 +134,58 @@ function actualizarPaginacion() {
     document.getElementById('btn-pag-ant').disabled = (paginaActual === 1);
     document.getElementById('btn-pag-sig').disabled = (paginaActual === totalPaginas);
 
+    // CONTROL DEL BOTÓN VOLVER/RESET: Si estamos filtrando, aparece el botón dinámico de regreso rápido
+    const btnReset = document.getElementById('btn-reset-menu');
+    if (generoActivo !== "TODOS" || document.getElementById('buscador-cine').value.trim() !== "") {
+        btnReset.style.display = "inline-block";
+    } else {
+        btnReset.style.display = "none";
+    }
+
     mostrarPaginaActual();
 }
 
-// NUEVA FUNCIÓN: ABRE LA TARJETA DETALLE ESTILO APK CON DOS SERVIDORES
 function abrirFichaDetalle(peli) {
     document.getElementById('modal-titulo').innerText = peli.titulo;
     document.getElementById('modal-caratula').src = peli.urlImagen;
     document.getElementById('modal-anio').innerText = peli.anio;
     document.getElementById('modal-generos').innerHTML = peli.generos.map(g => `<span class="info-valor">${g}</span>`).join(' ');
 
-    // Configuramos los botones para reproducir en pantalla completa utilizando su URL de vídeo
-    // Nota: Como Blogger suele traer un único servidor por entrada, ambos usarán el reproductor,
-    // emulando la selección de servidores independientes de la APK en la misma interfaz.
-    document.getElementById('btn-play-dzen').onclick = () => lanzarCinePantallaCompleta(peli.urlVideo);
-    document.getElementById('btn-play-odysee').onclick = () => lanzarCinePantallaCompleta(peli.urlVideo);
+    const btnDzen = document.getElementById('btn-play-dzen');
+    const btnOdysee = document.getElementById('btn-play-odysee');
+    const txtErrorOdysee = document.getElementById('error-odysee-text');
+
+    // Configurar Dzen
+    if (peli.urlDzen) {
+        btnDzen.disabled = false;
+        btnDzen.onclick = () => lanzarCinePantallaCompleta(peli.urlDzen);
+    } else {
+        btnDzen.disabled = true;
+    }
+
+    // Configurar Odysee (Evitamos que reproduzca Dzen si no existe)
+    if (peli.urlOdysee) {
+        btnOdysee.disabled = false;
+        txtErrorOdysee.style.display = "none";
+        btnOdysee.onclick = () => lanzarCinePantallaCompleta(peli.urlOdysee);
+    } else {
+        btnOdysee.disabled = true;
+        txtErrorOdysee.style.display = "block"; // Muestra un aviso limpio al usuario
+    }
 
     document.getElementById('modal-detalle-pelicula').style.display = "flex";
+}
+
+function resetearFiltrosYVolverAlMenu() {
+    document.getElementById('buscador-cine').value = "";
+    generoActivo = "TODOS";
+    document.querySelectorAll('.btn-genero').forEach(b => b.classList.remove('activo'));
+    const btnTodos = document.getElementById('btn-genero-todos');
+    if (btnTodos) btnTodos.classList.add('activo');
+    
+    peliculasFiltradas = [...peliculasDatos];
+    paginaActual = 1;
+    actualizarPaginacion();
 }
 
 function cerrarFichaDetalle() {
@@ -173,8 +220,6 @@ function filtrarPorGenero(genero, botonSeleccionado) {
     botonSeleccionado.classList.add('activo');
     
     aplicarFiltrosYBusqueda();
-    
-    // Al elegir una categoría de la carpeta, la cerramos automáticamente para limpiar la pantalla
     document.getElementById('carpeta-categorias').style.display = "none";
 }
 
@@ -188,14 +233,13 @@ function aplicarFiltrosYBusqueda() {
         if (btnTodos) btnTodos.classList.add('activo');
     }
 
-    // Filtramos el set de datos globales
     peliculasFiltradas = peliculasDatos.filter(peli => {
         const coincideBusqueda = peli.titulo.toLowerCase().includes(textoBusqueda);
         const coincideGenero = (generoActivo === "TODOS" || peli.generos.includes(generoActivo));
         return coincideBusqueda && coincideGenero;
     });
 
-    paginaActual = 1; // Reiniciamos a la primera página tras filtrar
+    paginaActual = 1; 
     actualizarPaginacion();
 }
 
@@ -211,17 +255,15 @@ function cerrarReproductor() {
     document.body.style.overflowY = "auto";
 }
 
-// --- CONFIGURACIÓN DE LOS EVENTOS ---
 document.addEventListener('DOMContentLoaded', () => {
     const buscador = document.getElementById('buscador-cine');
     if (buscador) buscador.addEventListener('input', aplicarFiltrosYBusqueda);
 
-    // Eventos de Paginación (Botones Inferiores)
     document.getElementById('btn-pag-ant').addEventListener('click', () => {
         if (paginaActual > 1) {
             paginaActual--;
             actualizarPaginacion();
-            window.scrollTo({ top: 0, behavior: 'smooth' }); // Sube arriba elegantemente al cambiar de página
+            window.scrollTo({ top: 0, behavior: 'smooth' });
         }
     });
 
@@ -234,20 +276,17 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-    // Evento para abrir/cerrar la "Carpeta" de Categorías
     const btnCarpeta = document.getElementById('btn-toggle-categorias');
     if (btnCarpeta) {
         btnCarpeta.addEventListener('click', () => {
             const carpeta = document.getElementById('carpeta-categorias');
-            if (carpeta.style.display === "block") {
-                carpeta.style.display = "none";
-            } else {
-                carpeta.style.display = "block";
-            }
+            carpeta.style.display = (carpeta.style.display === "block") ? "none" : "block";
         });
     }
 
-    // Eventos para cerrar los Modales
+    // Evento del nuevo botón "Volver al menú inicial" integrado en la cabecera
+    document.getElementById('btn-reset-menu').addEventListener('click', resetearFiltrosYVolverAlMenu);
+
     document.getElementById('btn-cerrar-modal').addEventListener('click', cerrarFichaDetalle);
     document.getElementById('close-player-btn').addEventListener('click', cerrarReproductor);
 });
