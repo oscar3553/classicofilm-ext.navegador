@@ -31,7 +31,7 @@ async function cargarBloque(startIndex) {
         if (!response.ok) return;
         const data = await response.json();
         if (data.feed && data.feed.entry) agregarPeliculasAlCatalogo(data.feed.entry);
-    } catch (e) { console.error("Error en bloque: ", e); }
+    } catch (e) { console.error("Error cargando bloque de datos: ", e); }
 }
 
 function agregarPeliculasAlCatalogo(entradas) {
@@ -45,33 +45,32 @@ function agregarPeliculasAlCatalogo(entradas) {
         let imagenUrl = "https://via.placeholder.com/200x280?text=Cine";
         if (entry.media$thumbnail) imagenUrl = entry.media$thumbnail.url.replace('/s72-c/', '/s400/');
 
-        // DETECTOR INTELIGENTE DE MÚLTIPLES SERVIDORES (Dzen vs Odysee)
         let urlDzen = "";
         let urlOdysee = "";
         const contenidoPost = entry.content ? entry.content.$t : "";
         
-        // Buscamos todos los iframes del post
+        // Extracción limpia a través de expresiones regulares globales
         const matchesIframe = [...contenidoPost.matchAll(/<iframe[^>]+src="([^">]+)"/g)];
         
         if (matchesIframe.length > 0) {
             matchesIframe.forEach(match => {
                 let urlEncontrada = match[1].startsWith('//') ? 'https:' + match[1] : match[1];
-                if (urlEncontrada.includes("dzen") || urlEncontrada.includes("yandex") || urlDzen === "") {
-                    if (!urlDzen) urlDzen = urlEncontrada;
-                }
-                if (urlEncontrada.includes("odysee") || urlEncontrada.includes("lbry")) {
+                
+                if (urlEncontrada.includes("dzen") || urlEncontrada.includes("yandex")) {
+                    urlDzen = urlEncontrada;
+                } else if (urlEncontrada.includes("odysee") || urlEncontrada.includes("lbry")) {
                     urlOdysee = urlEncontrada;
+                } else {
+                    if (!urlDzen) urlDzen = urlEncontrada; 
                 }
             });
         }
 
-        // Si no se detectó nada mediante iframe, intentamos buscar enlaces directos en el contenido del post
         if (!urlOdysee) {
             const matchLinkOdysee = contenidoPost.match(/href="([^">]*odysee[^">]*)"/);
             if (matchLinkOdysee) urlOdysee = matchLinkOdysee[1];
         }
 
-        // Si no hay reproductor disponible de ningún tipo, saltamos la entrada
         if (!urlDzen && !urlOdysee) return;
 
         let generosPeli = [];
@@ -101,13 +100,15 @@ function mostrarPaginaActual() {
     contenedor.innerHTML = ""; 
 
     if (peliculasFiltradas.length === 0) {
-        contenedor.innerHTML = `<p style="grid-column: 1/-1; text-align: center; color: #888; padding: 40px;">No se encontraron películas.</p>`;
+        contenedor.innerHTML = `<p style="grid-column: 1/-1; text-align: center; color: #888; padding: 40px;">No se encontraron películas con este criterio.</p>`;
         return;
     }
 
     const inicio = (paginaActual - 1) * peliculasPorPagina;
     const fin = inicio + peliculasPorPagina;
-    const pelisDeLaPagina = pelisDeLaPagina = peliculasFiltradas.slice(inicio, fin);
+    
+    // CORREGIDO: Extraemos la porción de películas limpiamente sin duplicaciones
+    const pelisDeLaPagina = peliculasFiltradas.slice(inicio, fin);
 
     pelisDeLaPagina.forEach(peli => {
         const tarjeta = document.createElement('a');
@@ -134,7 +135,7 @@ function actualizarPaginacion() {
     document.getElementById('btn-pag-ant').disabled = (paginaActual === 1);
     document.getElementById('btn-pag-sig').disabled = (paginaActual === totalPaginas);
 
-    // CONTROL DEL BOTÓN VOLVER/RESET: Si estamos filtrando, aparece el botón dinámico de regreso rápido
+    // NUEVO BOTÓN COMPLETO: Si estás usando filtros o búsquedas, aparece "Ver todo el catálogo"
     const btnReset = document.getElementById('btn-reset-menu');
     if (generoActivo !== "TODOS" || document.getElementById('buscador-cine').value.trim() !== "") {
         btnReset.style.display = "inline-block";
@@ -155,7 +156,7 @@ function abrirFichaDetalle(peli) {
     const btnOdysee = document.getElementById('btn-play-odysee');
     const txtErrorOdysee = document.getElementById('error-odysee-text');
 
-    // Configurar Dzen
+    // Manejo inteligente del servidor Dzen
     if (peli.urlDzen) {
         btnDzen.disabled = false;
         btnDzen.onclick = () => lanzarCinePantallaCompleta(peli.urlDzen);
@@ -163,14 +164,14 @@ function abrirFichaDetalle(peli) {
         btnDzen.disabled = true;
     }
 
-    // Configurar Odysee (Evitamos que reproduzca Dzen si no existe)
+    // Solución al problema de replicación de Odysee
     if (peli.urlOdysee) {
         btnOdysee.disabled = false;
         txtErrorOdysee.style.display = "none";
         btnOdysee.onclick = () => lanzarCinePantallaCompleta(peli.urlOdysee);
     } else {
         btnOdysee.disabled = true;
-        txtErrorOdysee.style.display = "block"; // Muestra un aviso limpio al usuario
+        txtErrorOdysee.style.display = "block"; // Se despliega el aviso amarillo estético de forma limpia
     }
 
     document.getElementById('modal-detalle-pelicula').style.display = "flex";
@@ -284,9 +285,7 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // Evento del nuevo botón "Volver al menú inicial" integrado en la cabecera
     document.getElementById('btn-reset-menu').addEventListener('click', resetearFiltrosYVolverAlMenu);
-
     document.getElementById('btn-cerrar-modal').addEventListener('click', cerrarFichaDetalle);
     document.getElementById('close-player-btn').addEventListener('click', cerrarReproductor);
 });
