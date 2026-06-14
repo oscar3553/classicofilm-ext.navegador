@@ -211,6 +211,7 @@ function filtrarPorGenero(genero, botonSeleccionado) {
     
     aplicarFiltrosYBusqueda();
     document.getElementById('carpeta-categorias').style.display = "none";
+    window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 
 function aplicarFiltrosYBusqueda() {
@@ -229,7 +230,6 @@ function aplicarFiltrosYBusqueda() {
 function lanzarCinePantallaCompleta(url) {
     document.body.style.overflow = "hidden";
     const contenedorVideo = document.getElementById('video-container-tv');
-    // Forzamos visualmente que el contenedor tome dimensiones absolutas correctas
     contenedorVideo.innerHTML = `<iframe src="${url}" allow="autoplay; fullscreen" allowfullscreen></iframe>`;
     document.getElementById('reproductor-pantalla-completa').style.display = "flex";
 }
@@ -269,7 +269,6 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // Vinculación de los nuevos botones de Inicio rápidos
     document.getElementById('btn-inicio-cabecera').addEventListener('click', volverAlMenuCompleto);
     document.getElementById('btn-inicio-pie').addEventListener('click', volverAlMenuCompleto);
     
