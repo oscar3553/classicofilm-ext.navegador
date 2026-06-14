@@ -4,6 +4,11 @@ let peliculasDatos = [];
 let todasLasEtiquetas = new Set();
 let generoActivo = "TODOS";
 
+// --- NUEVAS VARIABLES PARA PAGINACIÓN Y FILTRADO ---
+let peliculasFiltradas = []; // Guardará las películas que pasen los filtros actuales
+let paginaActual = 1;
+const peliculasPorPagina = 16; // Cantidad de entradas por página estilo APK
+
 async function cargarTodoElCatalogo() {
     document.getElementById('estado-titulo').innerText = "Cargando películas recientes...";
     await cargarBloque(1);
@@ -11,8 +16,14 @@ async function cargarTodoElCatalogo() {
     await cargarBloque(151);
     document.getElementById('estado-titulo').innerText = "Cargando películas antiguas...";
     await cargarBloque(301);
-    document.getElementById('estado-titulo').innerText = `Catálogo (${totalPeliculas} películas)`;
+    
+    document.getElementById('estado-titulo').innerText = `CATÁLOGO (${totalPeliculas} PELÍCULAS)`;
+    
     crearBotonesDeGeneros();
+    
+    // Al terminar de cargar, inicializamos la lista filtrada con todo el catálogo y renderizamos la pág 1
+    peliculasFiltradas = [...peliculasDatos];
+    actualizarPaginacion();
 }
 
 async function cargarBloque(startIndex) {
@@ -26,7 +37,6 @@ async function cargarBloque(startIndex) {
 }
 
 function agregarPeliculasAlCatalogo(entradas) {
-    const contenedor = document.getElementById('catalogo-tv');
     if (!entradas) return;
 
     entradas.forEach((entry) => {
@@ -51,25 +61,88 @@ function agregarPeliculasAlCatalogo(entradas) {
             generosPeli.forEach(g => todasLasEtiquetas.add(g));
         }
 
-        const tarjeta = document.createElement('a');
-        tarjeta.href = "#";
-        tarjeta.className = 'movie-card';
-        tarjeta.innerHTML = `<img src="${imagenUrl}" alt="${titulo}"><p>${titulo}</p>`;
-        
-        tarjeta.addEventListener('click', (e) => {
-            e.preventDefault();
-            lanzarCinePantallaCompleta(urlVideo);
-        });
+        // Intentar extraer el año del título de forma automática (ej: "Sahara (1943)" -> 1943)
+        let anioMatch = titulo.match(/\((\d{4})\)/);
+        let anioPeli = anioMatch ? anioMatch[1] : "Clásico";
 
-        contenedor.appendChild(tarjeta);
         totalPeliculas++;
 
+        // Guardamos los datos puros en el array en lugar de inyectar el elemento directamente
         peliculasDatos.push({ 
-            elemento: tarjeta, 
-            titulo: titulo.toLowerCase(), 
+            titulo: titulo, 
+            urlImagen: imagenUrl,
+            urlVideo: urlVideo,
+            anio: anioPeli,
             generos: generosPeli 
         });
     });
+}
+
+// RENDERIZA EXCLUSIVAMENTE LAS PELÍCULAS DE LA PÁGINA ACTIVA
+function mostrarPaginaActual() {
+    const contenedor = document.getElementById('catalogo-tv');
+    contenedor.innerHTML = ""; // Limpiamos la rejilla vieja
+
+    if (peliculasFiltradas.length === 0) {
+        contenedor.innerHTML = `<p style="grid-column: 1/-1; text-align: center; color: #888; padding: 40px;">No se encontraron películas.</p>`;
+        return;
+    }
+
+    // Calculamos el rango de cortes para la paginación
+    const inicio = (paginaActual - 1) * peliculasPorPagina;
+    const fin = inicio + peliculasPorPagina;
+    const pelisDeLaPagina = peliculasFiltradas.slice(inicio, fin);
+
+    pelisDeLaPagina.forEach(peli => {
+        const tarjeta = document.createElement('a');
+        tarjeta.href = "#";
+        tarjeta.className = 'movie-card';
+        tarjeta.innerHTML = `<img src="${peli.urlImagen}" alt="${peli.titulo}"><p>${peli.titulo}</p>`;
+        
+        // Al hacer clic, en lugar de ir a pantalla completa, ABRE LA FICHA INTERMEDIA (Pop-up)
+        tarjeta.addEventListener('click', (e) => {
+            e.preventDefault();
+            abrirFichaDetalle(peli);
+        });
+
+        contenedor.appendChild(tarjeta);
+    });
+}
+
+// ACTUALIZA LOS BOTONES DE ANTERIOR/SIGUIENTE Y EL CONTADOR DE PÁGINAS
+function actualizarPaginacion() {
+    const totalPaginas = Math.ceil(peliculasFiltradas.length / peliculasPorPagina) || 1;
+    
+    // Si por filtros quedamos fuera de rango, reiniciamos a la página 1
+    if (paginaActual > totalPaginas) paginaActual = 1;
+
+    document.getElementById('pag-actual').innerText = paginaActual;
+    document.getElementById('pag-total').innerText = totalPaginas;
+
+    document.getElementById('btn-pag-ant').disabled = (paginaActual === 1);
+    document.getElementById('btn-pag-sig').disabled = (paginaActual === totalPaginas);
+
+    mostrarPaginaActual();
+}
+
+// NUEVA FUNCIÓN: ABRE LA TARJETA DETALLE ESTILO APK CON DOS SERVIDORES
+function abrirFichaDetalle(peli) {
+    document.getElementById('modal-titulo').innerText = peli.titulo;
+    document.getElementById('modal-caratula').src = peli.urlImagen;
+    document.getElementById('modal-anio').innerText = peli.anio;
+    document.getElementById('modal-generos').innerHTML = peli.generos.map(g => `<span class="info-valor">${g}</span>`).join(' ');
+
+    // Configuramos los botones para reproducir en pantalla completa utilizando su URL de vídeo
+    // Nota: Como Blogger suele traer un único servidor por entrada, ambos usarán el reproductor,
+    // emulando la selección de servidores independientes de la APK en la misma interfaz.
+    document.getElementById('btn-play-dzen').onclick = () => lanzarCinePantallaCompleta(peli.urlVideo);
+    document.getElementById('btn-play-odysee').onclick = () => lanzarCinePantallaCompleta(peli.urlVideo);
+
+    document.getElementById('modal-detalle-pelicula').style.display = "flex";
+}
+
+function cerrarFichaDetalle() {
+    document.getElementById('modal-detalle-pelicula').style.display = "none";
 }
 
 function crearBotonesDeGeneros() {
@@ -94,19 +167,20 @@ function crearBotonesDeGeneros() {
 
 function filtrarPorGenero(genero, botonSeleccionado) {
     generoActivo = genero;
-    
-    // CORRECCIÓN: Si el usuario pulsa "Todas las películas" o cualquier género, vaciamos la barra de búsqueda automáticamente
     document.getElementById('buscador-cine').value = "";
     
     document.querySelectorAll('.btn-genero').forEach(b => b.classList.remove('activo'));
     botonSeleccionado.classList.add('activo');
+    
     aplicarFiltrosYBusqueda();
+    
+    // Al elegir una categoría de la carpeta, la cerramos automáticamente para limpiar la pantalla
+    document.getElementById('carpeta-categorias').style.display = "none";
 }
 
 function aplicarFiltrosYBusqueda() {
     const textoBusqueda = document.getElementById('buscador-cine').value.toLowerCase().trim();
     
-    // Si el usuario escribe activamente en el buscador, pasamos el foco a la lista global de forma automática
     if (textoBusqueda !== "" && generoActivo !== "TODOS") {
         generoActivo = "TODOS";
         document.querySelectorAll('.btn-genero').forEach(b => b.classList.remove('activo'));
@@ -114,24 +188,16 @@ function aplicarFiltrosYBusqueda() {
         if (btnTodos) btnTodos.classList.add('activo');
     }
 
-    peliculasDatos.forEach(peli => {
-        const coincideBusqueda = peli.titulo.includes(textoBusqueda);
+    // Filtramos el set de datos globales
+    peliculasFiltradas = peliculasDatos.filter(peli => {
+        const coincideBusqueda = peli.titulo.toLowerCase().includes(textoBusqueda);
         const coincideGenero = (generoActivo === "TODOS" || peli.generos.includes(generoActivo));
-
-        if (coincideBusqueda && coincideGenero) {
-            peli.elemento.style.setProperty("display", "block", "important");
-        } else {
-            peli.elemento.style.setProperty("display", "none", "important");
-        }
+        return coincideBusqueda && coincideGenero;
     });
-}
 
-document.addEventListener('DOMContentLoaded', () => {
-    const buscador = document.getElementById('buscador-cine');
-    if(buscador) {
-        buscador.addEventListener('input', aplicarFiltrosYBusqueda);
-    }
-});
+    paginaActual = 1; // Reiniciamos a la primera página tras filtrar
+    actualizarPaginacion();
+}
 
 function lanzarCinePantallaCompleta(url) {
     document.body.style.overflow = "hidden";
@@ -145,5 +211,45 @@ function cerrarReproductor() {
     document.body.style.overflowY = "auto";
 }
 
-document.getElementById('close-player-btn').addEventListener('click', cerrarReproductor);
+// --- CONFIGURACIÓN DE LOS EVENTOS ---
+document.addEventListener('DOMContentLoaded', () => {
+    const buscador = document.getElementById('buscador-cine');
+    if (buscador) buscador.addEventListener('input', aplicarFiltrosYBusqueda);
+
+    // Eventos de Paginación (Botones Inferiores)
+    document.getElementById('btn-pag-ant').addEventListener('click', () => {
+        if (paginaActual > 1) {
+            paginaActual--;
+            actualizarPaginacion();
+            window.scrollTo({ top: 0, behavior: 'smooth' }); // Sube arriba elegantemente al cambiar de página
+        }
+    });
+
+    document.getElementById('btn-pag-sig').addEventListener('click', () => {
+        const totalPaginas = Math.ceil(peliculasFiltradas.length / peliculasPorPagina);
+        if (paginaActual < totalPaginas) {
+            paginaActual++;
+            actualizarPaginacion();
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+    });
+
+    // Evento para abrir/cerrar la "Carpeta" de Categorías
+    const btnCarpeta = document.getElementById('btn-toggle-categorias');
+    if (btnCarpeta) {
+        btnCarpeta.addEventListener('click', () => {
+            const carpeta = document.getElementById('carpeta-categorias');
+            if (carpeta.style.display === "block") {
+                carpeta.style.display = "none";
+            } else {
+                carpeta.style.display = "block";
+            }
+        });
+    }
+
+    // Eventos para cerrar los Modales
+    document.getElementById('btn-cerrar-modal').addEventListener('click', cerrarFichaDetalle);
+    document.getElementById('close-player-btn').addEventListener('click', cerrarReproductor);
+});
+
 window.onload = () => { cargarTodoElCatalogo(); };
