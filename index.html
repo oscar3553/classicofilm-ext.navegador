@@ -17,53 +17,54 @@
             overflow-y: auto;
         }
         
-        /* Encabezado fijo totalmente centrado */
+        /* Encabezado fijo totalmente centrado en bloques verticales estructurados */
         .header-tv {
-            text-align: center;
             padding: 20px;
             position: sticky;
             top: 0; left: 0; width: 100%;
-            background: rgba(12, 12, 12, 0.95);
+            background: rgba(12, 12, 12, 0.96);
             backdrop-filter: blur(15px);
             z-index: 10;
             border-bottom: 1px solid #1a1a1a;
             display: flex;
             flex-direction: column;
-            align-items: center; /* Alinea todo al centro vertical */
+            align-items: center; 
             justify-content: center;
+            gap: 15px;
         }
+
         .logo-container {
-            width: 100%;
             display: flex;
             justify-content: center;
-            margin-bottom: 15px;
+            width: 100%;
         }
         .logo-container img {
-            max-height: 60px;
+            max-height: 65px;
             width: auto;
             filter: drop-shadow(0px 0px 10px rgba(229, 9, 20, 0.2));
         }
         
-        /* Caja de controles unificada y centrada */
+        /* Controles simétricos alineados con el eje del logo */
         .controles-container {
             display: flex;
             flex-direction: column;
             align-items: center;
             gap: 12px;
             width: 100%;
-            max-width: 600px;
-            margin: 0 auto;
+            max-width: 650px;
         }
+        
         .fila-busqueda {
             display: flex;
             width: 100%;
-            gap: 12px;
+            gap: 10px;
             justify-content: center;
             align-items: center;
         }
+        
         .caja-busqueda {
             flex: 1;
-            max-width: 380px;
+            max-width: 400px;
             padding: 12px 20px;
             font-size: 1rem;
             background-color: #151515;
@@ -73,7 +74,6 @@
             outline: none;
             text-align: center;
             transition: all 0.3s ease;
-            box-shadow: inset 0 2px 4px rgba(0,0,0,0.5);
         }
         .caja-busqueda:focus {
             border-color: #e50914;
@@ -81,38 +81,35 @@
             box-shadow: 0 0 10px rgba(229, 9, 20, 0.3);
         }
 
-        /* Botón Carpeta de Categorías */
         .btn-carpeta-categorias {
             background-color: #e50914;
             color: white;
             border: none;
-            padding: 12px 22px;
-            font-size: 0.95rem;
+            padding: 12px 24px;
+            font-size: 0.9rem;
             font-weight: bold;
             border-radius: 30px;
             cursor: pointer;
             display: flex;
             align-items: center;
-            gap: 8px;
+            gap: 6px;
             text-transform: uppercase;
             transition: all 0.2s ease;
-            box-shadow: 0 4px 10px rgba(229, 9, 20, 0.3);
         }
         .btn-carpeta-categorias:hover {
             background-color: #b80710;
-            transform: scale(1.03);
+            transform: scale(1.02);
         }
 
-        /* Desplegable de Categorías perfectamente centrado abajo */
+        /* Desplegable de Categorías */
         .seccion-categorias-desplegable {
             display: none;
             width: 100%;
-            max-width: 550px;
+            max-width: 600px;
             background: #141414;
             border: 1px solid #252525;
             border-radius: 12px;
             padding: 15px;
-            margin-top: 5px;
             box-shadow: 0 10px 25px rgba(0,0,0,0.6);
         }
         .contenedor-generos {
@@ -120,7 +117,7 @@
             flex-wrap: wrap;
             justify-content: center;
             gap: 8px;
-            max-height: 150px;
+            max-height: 160px;
             overflow-y: auto;
             padding: 5px;
         }
@@ -135,7 +132,7 @@
             font-size: 0.8rem;
             border-radius: 20px;
             cursor: pointer;
-            transition: all 0.2s ease;
+            transition: all 0.15s;
         }
         .btn-genero:hover, .btn-genero.activo {
             background-color: #e50914;
@@ -143,32 +140,33 @@
             border-color: #e50914;
         }
 
-        /* Texto del estado del Catálogo */
+        /* Texto informativo e indicador de reinicio rápido */
         .subtitulo-catalogo {
             display: flex;
             align-items: center;
-            gap: 10px;
             justify-content: center;
-            margin-top: 5px;
+            gap: 12px;
+            margin-top: 4px;
+            width: 100%;
         }
         h2 { 
             font-size: 0.85rem; 
             margin: 0; 
-            color: #888; 
+            color: #8c8c8c; 
             text-transform: uppercase; 
             letter-spacing: 2px; 
+            text-align: center;
         }
 
-        /* Botón de reset rápido cuando filtras */
         .btn-reset-filtro {
             display: none;
             background: #222;
             color: #e50914;
             border: 1px solid #333;
-            padding: 4px 10px;
+            padding: 5px 12px;
             font-size: 0.75rem;
             font-weight: bold;
-            border-radius: 4px;
+            border-radius: 20px;
             cursor: pointer;
             text-transform: uppercase;
             transition: all 0.2s;
@@ -176,6 +174,7 @@
         .btn-reset-filtro:hover {
             background: #e50914;
             color: white;
+            border-color: #e50914;
         }
         
         /* Rejilla de películas */
@@ -190,24 +189,24 @@
             gap: 25px; 
         }
 
-        /* Tarjetas de Películas */
+        /* Tarjetas estilo APK */
         .movie-card { 
             background-color: #141414; 
-            border-radius: 8px; 
+            border-radius: 6px; 
             overflow: hidden; 
             border: 1px solid #222; 
             display: flex;
             flex-direction: column;
             text-decoration: none;
             color: white;
-            transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+            transition: all 0.25s ease-out;
             cursor: pointer;
             box-shadow: 0 4px 6px rgba(0,0,0,0.3);
         }
         .movie-card:hover { 
-            transform: translateY(-5px) scale(1.04); 
+            transform: translateY(-4px); 
             border-color: #e50914; 
-            box-shadow: 0 10px 20px rgba(229, 9, 20, 0.3);
+            box-shadow: 0 8px 16px rgba(229, 9, 20, 0.25);
         }
         .movie-card img { 
             width: 100%; 
@@ -216,7 +215,7 @@
             background-color: #252525; 
         }
         .movie-card p { 
-            padding: 12px 8px; 
+            padding: 10px 6px; 
             margin: 0; 
             font-size: 0.85rem; 
             font-weight: 600;
@@ -228,7 +227,7 @@
             color: #e0e0e0;
         }
 
-        /* Barra de Paginación */
+        /* Controles de paginación inferiores */
         .contenedor-paginacion {
             display: flex;
             justify-content: center;
@@ -236,48 +235,37 @@
             gap: 15px;
             padding: 30px 20px;
             width: 100%;
-            background: #0c0c0c;
         }
         .btn-paginacion {
             background-color: #1a1a1a;
             color: #fff;
             border: 1px solid #282828;
-            padding: 10px 20px;
-            font-size: 0.9rem;
+            padding: 10px 22px;
+            font-size: 0.85rem;
             font-weight: bold;
             border-radius: 20px;
             cursor: pointer;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            transition: all 0.2s ease;
+            transition: all 0.2s;
         }
         .btn-paginacion:hover:not(:disabled) {
             background-color: #252525;
             border-color: #444;
         }
         .btn-paginacion:disabled {
-            opacity: 0.3;
+            opacity: 0.25;
             cursor: not-allowed;
         }
         .info-paginas {
-            font-size: 0.9rem;
+            font-size: 0.85rem;
             font-weight: bold;
-            color: #888;
+            color: #777;
             letter-spacing: 1px;
-            text-transform: uppercase;
         }
         .info-paginas span {
             color: #fff;
         }
 
-        /* Modal Ficha flotante */
-        .modal-text-error {
-            color: #ffc107;
-            font-size: 0.8rem;
-            margin-top: 4px;
-            display: none;
-        }
+        /* Ventana emergente (Ficha detalle) */
         .modal-detalle {
             display: none;
             position: fixed;
@@ -292,15 +280,15 @@
         .tarjeta-detalle {
             background: #141414;
             border: 1px solid #282828;
-            border-radius: 12px;
+            border-radius: 10px;
             width: 100%;
-            max-width: 700px;
+            max-width: 680px;
             display: flex;
             overflow: hidden;
-            box-shadow: 0 15px 30px rgba(0,0,0,0.7);
+            box-shadow: 0 15px 35px rgba(0,0,0,0.8);
         }
         .detalle-izquierda {
-            width: 40%;
+            width: 38%;
             background: #000;
         }
         .detalle-izquierda img {
@@ -310,36 +298,37 @@
             display: block;
         }
         .detalle-derecha {
-            width: 60%;
-            padding: 30px;
+            width: 62%;
+            padding: 25px;
             display: flex;
             flex-direction: column;
             justify-content: center;
         }
         .detalle-titulo {
-            font-size: 1.4rem;
+            font-size: 1.3rem;
             margin: 0 0 15px 0;
             font-weight: bold;
             color: #fff;
+            line-height: 1.3;
         }
         .detalle-info-linea {
-            margin-bottom: 20px;
+            margin-bottom: 15px;
             font-size: 0.9rem;
         }
-        .info-etiqueta { color: #e50914; font-weight: bold; text-transform: uppercase; margin-right: 8px; }
-        .info-valor { color: #fff; background: #252525; padding: 3px 8px; border-radius: 4px; font-size: 0.8rem; margin-right: 5px; }
+        .info-etiqueta { color: #e50914; font-weight: bold; text-transform: uppercase; margin-right: 6px; }
+        .info-valor { color: #fff; background: #252525; padding: 3px 8px; border-radius: 4px; font-size: 0.8rem; margin-right: 5px; display: inline-block; }
 
-        /* Botones de Servidores */
+        /* Contenedores de opciones de reproducción */
         .contenedor-botones-servidores {
             display: flex;
             flex-direction: column;
-            gap: 12px;
-            margin-top: 10px;
+            gap: 10px;
+            margin-top: 5px;
         }
         .btn-servidor {
             width: 100%;
-            padding: 14px;
-            font-size: 0.95rem;
+            padding: 12px;
+            font-size: 0.9rem;
             font-weight: bold;
             border: none;
             border-radius: 6px;
@@ -347,35 +336,31 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            gap: 10px;
+            gap: 8px;
             text-transform: uppercase;
-            letter-spacing: 1px;
+            letter-spacing: 0.5px;
             transition: background 0.2s, transform 0.1s;
         }
-        .btn-dzen {
-            background: #2ea1f8;
-            color: white;
-            box-shadow: 0 0 10px rgba(46, 161, 248, 0.3);
-        }
+        .btn-dzen { background: #2ea1f8; color: white; }
         .btn-dzen:hover { background: #1d90e7; }
         
-        .btn-odysee {
-            background: #ef5e5e;
-            color: white;
-            box-shadow: 0 0 10px rgba(239, 94, 94, 0.3);
-        }
+        .btn-odysee { background: #ef5e5e; color: white; }
         .btn-odysee:hover { background: #df4949; }
-        .btn-servidor:disabled { opacity: 0.4; cursor: not-allowed; box-shadow: none; }
+        
+        .btn-servidor:disabled { background: #222 !important; color: #555 !important; cursor: not-allowed; }
 
-        .btn-volver-menu {
-            background: #222;
-            color: #bbb;
-            border: 1px solid #333;
+        .modal-text-error {
+            color: #ffb300;
+            font-size: 0.75rem;
+            margin-top: 3px;
+            display: none;
+            text-align: center;
         }
-        .btn-volver-menu:hover { background: #333; color: #fff; }
-        .btn-servidor:active { transform: scale(0.98); }
 
-        /* Reproductor */
+        .btn-volver-menu { background: #262626; color: #ccc; border: 1px solid #333; margin-top: 5px; }
+        .btn-volver-menu:hover { background: #333; color: #fff; }
+
+        /* Pantalla completa del reproductor */
         #reproductor-pantalla-completa {
             display: none;
             position: fixed;
@@ -401,7 +386,6 @@
 </head>
 <body>
 
-    <!-- Encabezado Centrado -->
     <div class="header-tv">
         <div class="logo-container">
             <img src="https://blogger.googleusercontent.com/img/a/AVvXsEgpLF6ROFXXw42soEaNVYLsA7ZPqgnzhGWN-id-bGZ0GfPbfeO08bxXlPv6KgdiOPMAOrsjOu8V-WXIUhlTYRYlU6KQthnIL0VcP1-D1l7CJImrszfdjCImWIMOMgoBYl5MwPot7B7SeRqyx3TzBUP2q1AXRgr_hS1zlGMPnh4VEMTvEz9Lq0f1AytDFWog=s158" alt="Clasicofilm TV">
@@ -413,38 +397,34 @@
                 <button id="btn-toggle-categorias" class="btn-carpeta-categorias">📁 Categorías</button>
             </div>
             
-            <!-- Desplegable Carpeta -->
             <div id="carpeta-categorias" class="seccion-categorias-desplegable">
                 <div id="lista-generos" class="contenedor-generos"></div>
             </div>
             
             <div class="subtitulo-catalogo">
                 <h2 id="estado-titulo">CATÁLOGO</h2>
-                <button id="btn-reset-menu" class="btn-reset-filtro">↩ Ver todo</button>
+                <button id="btn-reset-menu" class="btn-reset-filtro">↩ Ver todo el catálogo</button>
             </div>
         </div>
     </div>
     
-    <!-- Rejilla -->
     <div class="tv-grid-wrapper">
         <div class="tv-grid" id="catalogo-tv"></div>
     </div>
 
-    <!-- Paginación -->
     <div class="contenedor-paginacion">
-        <button id="btn-pag-ant" class="btn-paginacion">⏮ Ant.</button>
-        <div class="info-paginas">PÁG. <span id="pag-actual">1</span> DE <span id="pag-total">1</span></div>
-        <button id="btn-pag-sig" class="btn-paginacion">Sig. ➡️</button>
+        <button id="btn-pag-ant" class="btn-paginacion">Anterior</button>
+        <div class="info-paginas">PÁGINA <span id="pag-actual">1</span> DE <span id="pag-total">1</span></div>
+        <button id="btn-pag-sig" class="btn-paginacion">Siguiente</button>
     </div>
 
-    <!-- Ficha de Detalle -->
     <div id="modal-detalle-pelicula" class="modal-detalle">
         <div class="tarjeta-detalle">
             <div class="detalle-izquierda">
                 <img id="modal-caratula" src="" alt="Carátula">
             </div>
             <div class="detalle-derecha">
-                <div id="modal-titulo" class="detalle-titulo">Título de la Película</div>
+                <div id="modal-titulo" class="detalle-titulo">-</div>
                 
                 <div class="detalle-info-linea">
                     <span class="info-etiqueta">Año:</span>
@@ -452,26 +432,25 @@
                 </div>
                 
                 <div class="detalle-info-linea">
-                    <span class="info-etiqueta">Género:</span>
+                    <span class="info-etiqueta">Géneros:</span>
                     <span id="modal-generos"></span>
                 </div>
                 
                 <div class="contenedor-botones-servidores">
-                    <button id="btn-play-dzen" class="btn-servidor btn-dzen">▶ Reproducir en Dzen.ru</button>
+                    <button id="btn-play-dzen" class="btn-servidor btn-dzen">▶ Servidor Dzen.ru</button>
                     <div>
-                        <button id="btn-play-odysee" class="btn-servidor btn-odysee">▶ Reproducir en Odysee</button>
-                        <div id="error-odysee-text" class="modal-text-error">⚠️ Este clásico solo está disponible en el servidor Dzen.ru</div>
+                        <button id="btn-play-odysee" class="btn-servidor btn-odysee">▶ Servidor Odysee</button>
+                        <div id="error-odysee-text" class="modal-text-error">⚠️ Película no disponible en Odysee. Véala en Dzen.ru</div>
                     </div>
-                    <button id="btn-cerrar-modal" class="btn-servidor btn-volver-menu">✕ Volver al menú</button>
+                    <button id="btn-cerrar-modal" class="btn-servidor btn-volver-menu">✕ Volver atrás</button>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- Reproductor -->
     <div id="reproductor-pantalla-completa">
-        <button class="btn-cerrar" id="close-player-btn">✕ Volver a la Ficha</button>
-        <div id="video-container-tv" style="width:100%; height:100%;"></div>
+        <button class="btn-cerrar" id="close-player-btn">✕ Cerrar Vídeo</button>
+        <div id="video-container-tv"></div>
     </div>
 
     <script src="popup.js"></script>
