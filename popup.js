@@ -19,7 +19,6 @@ async function cargarTodoElCatalogo() {
     document.getElementById('estado-titulo').innerText = `CATÁLOGO (${totalPeliculas} PELÍCULAS)`;
     
     crearBotonesDeGeneros();
-    
     peliculasFiltradas = [...peliculasDatos];
     actualizarPaginacion();
 }
@@ -31,7 +30,7 @@ async function cargarBloque(startIndex) {
         if (!response.ok) return;
         const data = await response.json();
         if (data.feed && data.feed.entry) agregarPeliculasAlCatalogo(data.feed.entry);
-    } catch (e) { console.error("Error cargando bloque de datos: ", e); }
+    } catch (e) { console.error("Error cargando datos: ", e); }
 }
 
 function agregarPeliculasAlCatalogo(entradas) {
@@ -49,7 +48,6 @@ function agregarPeliculasAlCatalogo(entradas) {
         let urlOdysee = "";
         const contenidoPost = entry.content ? entry.content.$t : "";
         
-        // Extracción limpia a través de expresiones regulares globales
         const matchesIframe = [...contenidoPost.matchAll(/<iframe[^>]+src="([^">]+)"/g)];
         
         if (matchesIframe.length > 0) {
@@ -100,14 +98,12 @@ function mostrarPaginaActual() {
     contenedor.innerHTML = ""; 
 
     if (peliculasFiltradas.length === 0) {
-        contenedor.innerHTML = `<p style="grid-column: 1/-1; text-align: center; color: #888; padding: 40px;">No se encontraron películas con este criterio.</p>`;
+        contenedor.innerHTML = `<p style="grid-column: 1/-1; text-align: center; color: #888; padding: 40px;">No se encontraron películas.</p>`;
         return;
     }
 
     const inicio = (paginaActual - 1) * peliculasPorPagina;
     const fin = inicio + peliculasPorPagina;
-    
-    // CORREGIDO: Extraemos la porción de películas limpiamente sin duplicaciones
     const pelisDeLaPagina = peliculasFiltradas.slice(inicio, fin);
 
     pelisDeLaPagina.forEach(peli => {
@@ -135,14 +131,6 @@ function actualizarPaginacion() {
     document.getElementById('btn-pag-ant').disabled = (paginaActual === 1);
     document.getElementById('btn-pag-sig').disabled = (paginaActual === totalPaginas);
 
-    // NUEVO BOTÓN COMPLETO: Si estás usando filtros o búsquedas, aparece "Ver todo el catálogo"
-    const btnReset = document.getElementById('btn-reset-menu');
-    if (generoActivo !== "TODOS" || document.getElementById('buscador-cine').value.trim() !== "") {
-        btnReset.style.display = "inline-block";
-    } else {
-        btnReset.style.display = "none";
-    }
-
     mostrarPaginaActual();
 }
 
@@ -156,7 +144,6 @@ function abrirFichaDetalle(peli) {
     const btnOdysee = document.getElementById('btn-play-odysee');
     const txtErrorOdysee = document.getElementById('error-odysee-text');
 
-    // Manejo inteligente del servidor Dzen
     if (peli.urlDzen) {
         btnDzen.disabled = false;
         btnDzen.onclick = () => lanzarCinePantallaCompleta(peli.urlDzen);
@@ -164,29 +151,31 @@ function abrirFichaDetalle(peli) {
         btnDzen.disabled = true;
     }
 
-    // Solución al problema de replicación de Odysee
     if (peli.urlOdysee) {
         btnOdysee.disabled = false;
         txtErrorOdysee.style.display = "none";
         btnOdysee.onclick = () => lanzarCinePantallaCompleta(peli.urlOdysee);
     } else {
         btnOdysee.disabled = true;
-        txtErrorOdysee.style.display = "block"; // Se despliega el aviso amarillo estético de forma limpia
+        txtErrorOdysee.style.display = "block"; 
     }
 
     document.getElementById('modal-detalle-pelicula').style.display = "flex";
 }
 
-function resetearFiltrosYVolverAlMenu() {
+function volverAlMenuCompleto() {
     document.getElementById('buscador-cine').value = "";
     generoActivo = "TODOS";
     document.querySelectorAll('.btn-genero').forEach(b => b.classList.remove('activo'));
+    
     const btnTodos = document.getElementById('btn-genero-todos');
     if (btnTodos) btnTodos.classList.add('activo');
     
+    document.getElementById('carpeta-categorias').style.display = "none";
     peliculasFiltradas = [...peliculasDatos];
     paginaActual = 1;
     actualizarPaginacion();
+    window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 
 function cerrarFichaDetalle() {
@@ -227,13 +216,6 @@ function filtrarPorGenero(genero, botonSeleccionado) {
 function aplicarFiltrosYBusqueda() {
     const textoBusqueda = document.getElementById('buscador-cine').value.toLowerCase().trim();
     
-    if (textoBusqueda !== "" && generoActivo !== "TODOS") {
-        generoActivo = "TODOS";
-        document.querySelectorAll('.btn-genero').forEach(b => b.classList.remove('activo'));
-        const btnTodos = document.getElementById('btn-genero-todos');
-        if (btnTodos) btnTodos.classList.add('activo');
-    }
-
     peliculasFiltradas = peliculasDatos.filter(peli => {
         const coincideBusqueda = peli.titulo.toLowerCase().includes(textoBusqueda);
         const coincideGenero = (generoActivo === "TODOS" || peli.generos.includes(generoActivo));
@@ -246,14 +228,16 @@ function aplicarFiltrosYBusqueda() {
 
 function lanzarCinePantallaCompleta(url) {
     document.body.style.overflow = "hidden";
-    document.getElementById('video-container-tv').innerHTML = `<iframe src="${url}" allow="autoplay; fullscreen" allowfullscreen></iframe>`;
-    document.getElementById('reproductor-pantalla-completa').style.display = "block";
+    const contenedorVideo = document.getElementById('video-container-tv');
+    // Forzamos visualmente que el contenedor tome dimensiones absolutas correctas
+    contenedorVideo.innerHTML = `<iframe src="${url}" allow="autoplay; fullscreen" allowfullscreen></iframe>`;
+    document.getElementById('reproductor-pantalla-completa').style.display = "flex";
 }
 
 function cerrarReproductor() {
     document.getElementById('reproductor-pantalla-completa').style.display = "none";
     document.getElementById('video-container-tv').innerHTML = ""; 
-    document.body.style.overflowY = "auto";
+    document.body.style.overflow = "auto";
 }
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -285,7 +269,10 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    document.getElementById('btn-reset-menu').addEventListener('click', resetearFiltrosYVolverAlMenu);
+    // Vinculación de los nuevos botones de Inicio rápidos
+    document.getElementById('btn-inicio-cabecera').addEventListener('click', volverAlMenuCompleto);
+    document.getElementById('btn-inicio-pie').addEventListener('click', volverAlMenuCompleto);
+    
     document.getElementById('btn-cerrar-modal').addEventListener('click', cerrarFichaDetalle);
     document.getElementById('close-player-btn').addEventListener('click', cerrarReproductor);
 });
