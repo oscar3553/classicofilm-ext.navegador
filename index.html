@@ -15,7 +15,7 @@
             overflow-y: auto;
         }
         
-        /* CABECERA: Bloques perfectamente centrados y simétricos */
+        /* CABECERA: Bloques simétricos y rígidos en eje central */
         .header-tv {
             padding: 20px;
             position: sticky;
@@ -39,14 +39,14 @@
             width: auto;
         }
         
-        /* Fila de controles en un único eje simétrico */
+        /* Fila de controles unificada */
         .controles-container {
             display: flex;
             flex-direction: column;
             align-items: center;
             gap: 12px;
             width: 100%;
-            max-width: 750px;
+            max-width: 800px;
         }
         
         .fila-busqueda {
@@ -66,6 +66,7 @@
             border-radius: 6px;
             color: white;
             outline: none;
+            height: 45px;
         }
         .caja-busqueda:focus {
             border-color: #e50914;
@@ -76,16 +77,18 @@
             background-color: #e50914;
             color: white;
             border: none;
-            padding: 12px 20px;
+            padding: 0 22px;
             font-size: 0.9rem;
             font-weight: bold;
             border-radius: 6px;
             cursor: pointer;
             display: flex;
             align-items: center;
+            justify-content: center;
             gap: 6px;
             white-space: nowrap;
             transition: background 0.2s;
+            height: 45px;
         }
         .btn-tv-accion:hover { background-color: #b80710; }
         .btn-tv-secundario { background-color: #262626; border: 1px solid #333; }
@@ -117,7 +120,7 @@
             background-color: #222;
             color: #ccc;
             border: 1px solid #333;
-            padding: 6px 14px;
+            padding: 8px 14px;
             font-size: 0.8rem;
             border-radius: 4px;
             cursor: pointer;
@@ -201,6 +204,9 @@
             font-weight: bold;
             border-radius: 4px;
             cursor: pointer;
+            height: 40px;
+            display: flex;
+            align-items: center;
         }
         .btn-paginacion:hover:not(:disabled) { background-color: #252525; }
         .btn-paginacion:disabled { opacity: 0.25; cursor: not-allowed; }
@@ -246,10 +252,10 @@
         .btn-odysee { background: #ef5e5e; color: white; }
         .btn-odysee:hover { background: #df4949; }
         .btn-servidor:disabled { background: #222 !important; color: #555 !important; cursor: not-allowed; }
-        .modal-text-error { color: #ffb300; font-size: 0.75rem; margin-top: 3px; display: none; text-align: center; }
+        .modal-text-error { color: #ffb300; font-size: 0.75rem; margin-top: 5px; display: none; text-align: center; font-weight: bold; }
         .btn-volver-menu { background: #262626; color: #ccc; border: 1px solid #333; }
 
-        /* REPRODUCTOR CORREGIDO: Ocupa toda la pantalla real y centra el contenido */
+        /* REPRODUCTOR PANTALLA COMPLETA TOTALMENTE CENTRADO */
         #reproductor-pantalla-completa {
             display: none;
             position: fixed;
@@ -261,9 +267,13 @@
             align-items: center;
             justify-content: center;
         }
+        /* Contenedor con relación de aspecto 16:9 estricta para evitar la deriva superior */
         #video-container-tv {
             width: 100%;
+            max-width: 100vw;
             height: 100%;
+            max-height: 100vh;
+            aspect-ratio: 16 / 9;
             display: flex;
             align-items: center;
             justify-content: center;
@@ -285,8 +295,8 @@
             font-weight: bold;
             border-radius: 4px;
             cursor: pointer;
-            z-index: 100000;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.5);
+            z-index: 100001;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.8);
         }
         .btn-cerrar:hover { background: #b80710; }
     </style>
