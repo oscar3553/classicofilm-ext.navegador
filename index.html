@@ -3,34 +3,30 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Clasicofilm TV - Extensión</title>
+    <title>Clasicofilm TV</title>
     <style>
-        * { box-sizing: border-box; }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
         body { 
             background-color: #0c0c0c; 
             color: #fff; 
             font-family: 'Segoe UI', Arial, sans-serif; 
-            margin: 0; 
-            padding: 0; 
             width: 100%; 
             min-height: 100vh;
             overflow-y: auto;
         }
         
-        /* Encabezado fijo totalmente centrado en bloques verticales estructurados */
+        /* CABECERA: Bloques perfectamente centrados y simétricos */
         .header-tv {
             padding: 20px;
             position: sticky;
-            top: 0; left: 0; width: 100%;
-            background: rgba(12, 12, 12, 0.96);
-            backdrop-filter: blur(15px);
-            z-index: 10;
-            border-bottom: 1px solid #1a1a1a;
+            top: 0; z-index: 10;
+            background: rgba(12, 12, 12, 0.98);
+            border-bottom: 1px solid #222;
             display: flex;
             flex-direction: column;
-            align-items: center; 
-            justify-content: center;
+            align-items: center;
             gap: 15px;
+            width: 100%;
         }
 
         .logo-container {
@@ -41,17 +37,16 @@
         .logo-container img {
             max-height: 65px;
             width: auto;
-            filter: drop-shadow(0px 0px 10px rgba(229, 9, 20, 0.2));
         }
         
-        /* Controles simétricos alineados con el eje del logo */
+        /* Fila de controles en un único eje simétrico */
         .controles-container {
             display: flex;
             flex-direction: column;
             align-items: center;
             gap: 12px;
             width: 100%;
-            max-width: 650px;
+            max-width: 750px;
         }
         
         .fila-busqueda {
@@ -64,60 +59,54 @@
         
         .caja-busqueda {
             flex: 1;
-            max-width: 400px;
             padding: 12px 20px;
             font-size: 1rem;
             background-color: #151515;
-            border: 1px solid #252525;
-            border-radius: 30px;
+            border: 1px solid #282828;
+            border-radius: 6px;
             color: white;
             outline: none;
-            text-align: center;
-            transition: all 0.3s ease;
         }
         .caja-busqueda:focus {
             border-color: #e50914;
             background-color: #1a1a1a;
-            box-shadow: 0 0 10px rgba(229, 9, 20, 0.3);
         }
 
-        .btn-carpeta-categorias {
+        .btn-tv-accion {
             background-color: #e50914;
             color: white;
             border: none;
-            padding: 12px 24px;
+            padding: 12px 20px;
             font-size: 0.9rem;
             font-weight: bold;
-            border-radius: 30px;
+            border-radius: 6px;
             cursor: pointer;
             display: flex;
             align-items: center;
             gap: 6px;
-            text-transform: uppercase;
-            transition: all 0.2s ease;
+            white-space: nowrap;
+            transition: background 0.2s;
         }
-        .btn-carpeta-categorias:hover {
-            background-color: #b80710;
-            transform: scale(1.02);
-        }
+        .btn-tv-accion:hover { background-color: #b80710; }
+        .btn-tv-secundario { background-color: #262626; border: 1px solid #333; }
+        .btn-tv-secundario:hover { background-color: #333; }
 
         /* Desplegable de Categorías */
         .seccion-categorias-desplegable {
             display: none;
             width: 100%;
-            max-width: 600px;
             background: #141414;
             border: 1px solid #252525;
-            border-radius: 12px;
+            border-radius: 8px;
             padding: 15px;
-            box-shadow: 0 10px 25px rgba(0,0,0,0.6);
+            box-shadow: 0 10px 25px rgba(0,0,0,0.7);
         }
         .contenedor-generos {
             display: flex;
             flex-wrap: wrap;
             justify-content: center;
             gap: 8px;
-            max-height: 160px;
+            max-height: 180px;
             overflow-y: auto;
             padding: 5px;
         }
@@ -128,11 +117,10 @@
             background-color: #222;
             color: #ccc;
             border: 1px solid #333;
-            padding: 6px 12px;
+            padding: 6px 14px;
             font-size: 0.8rem;
-            border-radius: 20px;
+            border-radius: 4px;
             cursor: pointer;
-            transition: all 0.15s;
         }
         .btn-genero:hover, .btn-genero.activo {
             background-color: #e50914;
@@ -140,48 +128,19 @@
             border-color: #e50914;
         }
 
-        /* Texto informativo e indicador de reinicio rápido */
         .subtitulo-catalogo {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 12px;
-            margin-top: 4px;
-            width: 100%;
-        }
-        h2 { 
             font-size: 0.85rem; 
-            margin: 0; 
             color: #8c8c8c; 
             text-transform: uppercase; 
             letter-spacing: 2px; 
             text-align: center;
-        }
-
-        .btn-reset-filtro {
-            display: none;
-            background: #222;
-            color: #e50914;
-            border: 1px solid #333;
-            padding: 5px 12px;
-            font-size: 0.75rem;
-            font-weight: bold;
-            border-radius: 20px;
-            cursor: pointer;
-            text-transform: uppercase;
-            transition: all 0.2s;
-        }
-        .btn-reset-filtro:hover {
-            background: #e50914;
-            color: white;
-            border-color: #e50914;
+            margin-top: 5px;
         }
         
         /* Rejilla de películas */
         .tv-grid-wrapper {
             width: 100%;
             padding: 25px;
-            min-height: 400px;
         }
         .tv-grid { 
             display: grid; 
@@ -189,7 +148,7 @@
             gap: 25px; 
         }
 
-        /* Tarjetas estilo APK */
+        /* Tarjetas */
         .movie-card { 
             background-color: #141414; 
             border-radius: 6px; 
@@ -199,14 +158,12 @@
             flex-direction: column;
             text-decoration: none;
             color: white;
-            transition: all 0.25s ease-out;
+            transition: transform 0.2s, border-color 0.2s;
             cursor: pointer;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.3);
         }
         .movie-card:hover { 
             transform: translateY(-4px); 
             border-color: #e50914; 
-            box-shadow: 0 8px 16px rgba(229, 9, 20, 0.25);
         }
         .movie-card img { 
             width: 100%; 
@@ -223,11 +180,9 @@
             overflow: hidden; 
             text-overflow: ellipsis; 
             text-align: center;
-            background: #141414;
-            color: #e0e0e0;
         }
 
-        /* Controles de paginación inferiores */
+        /* Paginación Inferior */
         .contenedor-paginacion {
             display: flex;
             justify-content: center;
@@ -235,6 +190,7 @@
             gap: 15px;
             padding: 30px 20px;
             width: 100%;
+            flex-wrap: wrap;
         }
         .btn-paginacion {
             background-color: #1a1a1a;
@@ -243,34 +199,20 @@
             padding: 10px 22px;
             font-size: 0.85rem;
             font-weight: bold;
-            border-radius: 20px;
+            border-radius: 4px;
             cursor: pointer;
-            transition: all 0.2s;
         }
-        .btn-paginacion:hover:not(:disabled) {
-            background-color: #252525;
-            border-color: #444;
-        }
-        .btn-paginacion:disabled {
-            opacity: 0.25;
-            cursor: not-allowed;
-        }
-        .info-paginas {
-            font-size: 0.85rem;
-            font-weight: bold;
-            color: #777;
-            letter-spacing: 1px;
-        }
-        .info-paginas span {
-            color: #fff;
-        }
+        .btn-paginacion:hover:not(:disabled) { background-color: #252525; }
+        .btn-paginacion:disabled { opacity: 0.25; cursor: not-allowed; }
+        .info-paginas { font-size: 0.85rem; font-weight: bold; color: #777; }
+        .info-paginas span { color: #fff; }
 
-        /* Ventana emergente (Ficha detalle) */
+        /* Ficha Detalle (Modal) */
         .modal-detalle {
             display: none;
             position: fixed;
             top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0, 0, 0, 0.85);
+            background: rgba(0, 0, 0, 0.9);
             backdrop-filter: blur(10px);
             z-index: 100;
             justify-content: center;
@@ -280,106 +222,71 @@
         .tarjeta-detalle {
             background: #141414;
             border: 1px solid #282828;
-            border-radius: 10px;
+            border-radius: 8px;
             width: 100%;
             max-width: 680px;
             display: flex;
             overflow: hidden;
-            box-shadow: 0 15px 35px rgba(0,0,0,0.8);
         }
-        .detalle-izquierda {
-            width: 38%;
-            background: #000;
-        }
-        .detalle-izquierda img {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-            display: block;
-        }
-        .detalle-derecha {
-            width: 62%;
-            padding: 25px;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-        }
-        .detalle-titulo {
-            font-size: 1.3rem;
-            margin: 0 0 15px 0;
-            font-weight: bold;
-            color: #fff;
-            line-height: 1.3;
-        }
-        .detalle-info-linea {
-            margin-bottom: 15px;
-            font-size: 0.9rem;
-        }
-        .info-etiqueta { color: #e50914; font-weight: bold; text-transform: uppercase; margin-right: 6px; }
+        .detalle-izquierda { width: 38%; background: #000; }
+        .detalle-izquierda img { width: 100%; height: 100%; object-fit: cover; display: block; }
+        .detalle-derecha { width: 62%; padding: 25px; display: flex; flex-direction: column; justify-content: center; }
+        .detalle-titulo { font-size: 1.3rem; margin-bottom: 15px; font-weight: bold; color: #fff; }
+        .detalle-info-linea { margin-bottom: 15px; font-size: 0.9rem; }
+        .info-etiqueta { color: #e50914; font-weight: bold; margin-right: 6px; text-transform: uppercase; }
         .info-valor { color: #fff; background: #252525; padding: 3px 8px; border-radius: 4px; font-size: 0.8rem; margin-right: 5px; display: inline-block; }
 
-        /* Contenedores de opciones de reproducción */
-        .contenedor-botones-servidores {
-            display: flex;
-            flex-direction: column;
-            gap: 10px;
-            margin-top: 5px;
-        }
+        .contenedor-botones-servidores { display: flex; flex-direction: column; gap: 10px; margin-top: 5px; }
         .btn-servidor {
-            width: 100%;
-            padding: 12px;
-            font-size: 0.9rem;
-            font-weight: bold;
-            border: none;
-            border-radius: 6px;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 8px;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-            transition: background 0.2s, transform 0.1s;
+            width: 100%; padding: 12px; font-size: 0.9rem; font-weight: bold; border: none; border-radius: 4px;
+            cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; text-transform: uppercase;
         }
         .btn-dzen { background: #2ea1f8; color: white; }
         .btn-dzen:hover { background: #1d90e7; }
-        
         .btn-odysee { background: #ef5e5e; color: white; }
         .btn-odysee:hover { background: #df4949; }
-        
         .btn-servidor:disabled { background: #222 !important; color: #555 !important; cursor: not-allowed; }
+        .modal-text-error { color: #ffb300; font-size: 0.75rem; margin-top: 3px; display: none; text-align: center; }
+        .btn-volver-menu { background: #262626; color: #ccc; border: 1px solid #333; }
 
-        .modal-text-error {
-            color: #ffb300;
-            font-size: 0.75rem;
-            margin-top: 3px;
-            display: none;
-            text-align: center;
-        }
-
-        .btn-volver-menu { background: #262626; color: #ccc; border: 1px solid #333; margin-top: 5px; }
-        .btn-volver-menu:hover { background: #333; color: #fff; }
-
-        /* Pantalla completa del reproductor */
+        /* REPRODUCTOR CORREGIDO: Ocupa toda la pantalla real y centra el contenido */
         #reproductor-pantalla-completa {
             display: none;
             position: fixed;
-            top: 0; left: 0; width: 100%; height: 100%;
+            top: 0; left: 0; 
+            width: 100vw; height: 100vh;
             background: #000;
-            z-index: 9999;
+            z-index: 99999;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
         }
-        #reproductor-pantalla-completa iframe { width: 100%; height: 100%; border: none; }
+        #video-container-tv {
+            width: 100%;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: #000;
+        }
+        #reproductor-pantalla-completa iframe { 
+            width: 100%; 
+            height: 100%; 
+            border: none;
+            display: block;
+        }
         .btn-cerrar {
             position: absolute;
             top: 20px; right: 20px;
             background: #e50914;
             color: white;
             border: none;
-            padding: 12px 20px;
+            padding: 12px 24px;
             font-weight: bold;
-            border-radius: 6px;
+            border-radius: 4px;
             cursor: pointer;
-            z-index: 10000;
+            z-index: 100000;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.5);
         }
         .btn-cerrar:hover { background: #b80710; }
     </style>
@@ -393,18 +300,16 @@
         
         <div class="controles-container">
             <div class="fila-busqueda">
+                <button id="btn-inicio-cabecera" class="btn-tv-accion btn-tv-secundario">🏠 Inicio</button>
                 <input type="text" id="buscador-cine" class="caja-busqueda" placeholder="Buscar película por título...">
-                <button id="btn-toggle-categorias" class="btn-carpeta-categorias">📁 Categorías</button>
+                <button id="btn-toggle-categorias" class="btn-tv-accion">📁 Categorías</button>
             </div>
             
             <div id="carpeta-categorias" class="seccion-categorias-desplegable">
                 <div id="lista-generos" class="contenedor-generos"></div>
             </div>
             
-            <div class="subtitulo-catalogo">
-                <h2 id="estado-titulo">CATÁLOGO</h2>
-                <button id="btn-reset-menu" class="btn-reset-filtro">↩ Ver todo el catálogo</button>
-            </div>
+            <div id="estado-titulo" class="subtitulo-catalogo">CATÁLOGO</div>
         </div>
     </div>
     
@@ -416,6 +321,7 @@
         <button id="btn-pag-ant" class="btn-paginacion">Anterior</button>
         <div class="info-paginas">PÁGINA <span id="pag-actual">1</span> DE <span id="pag-total">1</span></div>
         <button id="btn-pag-sig" class="btn-paginacion">Siguiente</button>
+        <button id="btn-inicio-pie" class="btn-paginacion" style="background-color: #e50914; color: white; border: none; margin-left: 15px;">🏠 Volver al Inicio</button>
     </div>
 
     <div id="modal-detalle-pelicula" class="modal-detalle">
@@ -425,17 +331,14 @@
             </div>
             <div class="detalle-derecha">
                 <div id="modal-titulo" class="detalle-titulo">-</div>
-                
                 <div class="detalle-info-linea">
                     <span class="info-etiqueta">Año:</span>
                     <span id="modal-anio" class="info-valor">-</span>
                 </div>
-                
                 <div class="detalle-info-linea">
                     <span class="info-etiqueta">Géneros:</span>
                     <span id="modal-generos"></span>
                 </div>
-                
                 <div class="contenedor-botones-servidores">
                     <button id="btn-play-dzen" class="btn-servidor btn-dzen">▶ Servidor Dzen.ru</button>
                     <div>
